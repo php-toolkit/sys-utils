@@ -6,11 +6,11 @@
  * Time: 下午8:18
  */
 
-namespace MyLib\SysUtil\Helper;
+namespace MyLib\SysUtil;
 
 /**
  * Class Sys
- * @package MyLib\SysUtil\Helper
+ * @package MyLib\SysUtil
  */
 class Sys extends EnvHelper
 {

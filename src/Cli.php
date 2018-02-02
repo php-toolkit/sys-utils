@@ -6,11 +6,11 @@
  * Time: 下午5:33
  */
 
-namespace MyLib\SysUtil\Helper;
+namespace MyLib\SysUtil;
 
 /**
  * Class Cli
- * @package MyLib\SysUtil\Helper
+ * @package MyLib\SysUtil
  */
 class Cli
 {

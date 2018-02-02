@@ -6,11 +6,11 @@
  * Time: 下午12:26
  */
 
-namespace MyLib\SysUtil\Helper;
+namespace MyLib\SysUtil;
 
 /**
  * Class RequestHelper
- * @package MyLib\SysUtil\Helper
+ * @package MyLib\SysUtil
  */
 class Req
 {
