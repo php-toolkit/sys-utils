@@ -12,7 +12,7 @@ namespace MyLib\SysUtil;
  * Class Sys
  * @package MyLib\SysUtil
  */
-class Sys extends EnvHelper
+class Sys extends SysEnv
 {
     /**
      * run a command in background

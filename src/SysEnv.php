@@ -12,7 +12,7 @@ namespace MyLib\SysUtil;
  * Class EnvHelper
  * @package MyLib\SysUtil
  */
-class EnvHelper
+class SysEnv
 {
     /**************************************************************************
      * system env
@@ -44,6 +44,9 @@ class EnvHelper
         return self::isWindows();
     }
 
+    /**
+     * @return bool
+     */
     public static function isWindows(): bool
     {
         return stripos(PHP_OS, 'WIN') !== false;
@@ -123,131 +126,4 @@ class EnvHelper
         return \function_exists('posix_isatty') && @posix_isatty($fileDescriptor);
     }
 
-    /**************************************************************************
-     * php env
-     *************************************************************************/
-
-    /**
-     * @param string $name
-     * @return bool
-     */
-    public static function hasExtension(string $name): bool
-    {
-        return \extension_loaded($name);
-    }
-
-    /**
-     * Get PHP version
-     * @return string
-     */
-    public static function getVersion(): string
-    {
-        return \defined('HHVM_VERSION') ? HHVM_VERSION : PHP_VERSION;
-    }
-
-    /**
-     * isEmbed
-     * @return  boolean
-     */
-    public static function isEmbed(): bool
-    {
-        return 'embed' === PHP_SAPI;
-    }
-
-    /**
-     * @return bool
-     */
-    public static function isCgi(): bool
-    {
-        return stripos(PHP_SAPI, 'cgi') !== false;   #  cgi环境
-    }
-
-    /**
-     * is Cli
-     * @return  boolean
-     */
-    public static function isCli(): bool
-    {
-        return PHP_SAPI === 'cli';
-    }
-
-    /**
-     * is Build In Server
-     * run server use like: `php -S 127.0.0.1:8085`
-     * @return  boolean
-     */
-    public static function isBuiltInServer(): bool
-    {
-        return PHP_SAPI === 'cli-server';
-    }
-
-    /**
-     * @return bool
-     */
-    public static function isDevServer(): bool
-    {
-        return PHP_SAPI === 'cli-server';
-    }
-
-    /**
-     * isWeb
-     * @return  boolean
-     */
-    public static function isWeb(): bool
-    {
-        return \in_array(PHP_SAPI, [
-            'apache',
-            'cgi',
-            'fast-cgi',
-            'cgi-fcgi',
-            'fpm-fcgi',
-            'srv',
-            'cli-server'
-        ], true);
-    }
-
-    /**
-     * isHHVM
-     * @return  boolean
-     */
-    public static function isHHVM(): bool
-    {
-        return \defined('HHVM_VERSION');
-    }
-
-    /**
-     * isPHP
-     * @return  boolean
-     */
-    public static function isPHP(): bool
-    {
-        return !static::isHHVM();
-    }
-
-    /**
-     * setStrict
-     * @return  void
-     */
-    public static function setStrict(): void
-    {
-        error_reporting(32767);
-    }
-
-    /**
-     * setMuted
-     * @return  void
-     */
-    public static function setMuted(): void
-    {
-        error_reporting(0);
-    }
-
-    /**
-     * Returns true when the runtime used is PHP and Xdebug is loaded.
-     * @return boolean
-     */
-    public static function hasXDebug(): bool
-    {
-        return static::isPHP() && \extension_loaded('xdebug');
-    }
 }

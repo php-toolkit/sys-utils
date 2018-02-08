@@ -148,7 +148,7 @@ class Cli
         }
 
         // if don't support output color text, clear color tag.
-        if (!EnvHelper::isSupportColor()) {
+        if (!SysEnv::isSupportColor()) {
             return static::clearColor($text);
         }
 
@@ -254,7 +254,7 @@ class Cli
      */
     public static function isSupportColor()
     {
-        return EnvHelper::isSupportColor();
+        return SysEnv::isSupportColor();
     }
 
     /**
