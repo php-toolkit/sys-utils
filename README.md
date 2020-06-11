@@ -6,6 +6,11 @@
 
 Some useful system utils for php
 
+- exec system command
+- simple process usage
+- php env info
+- error and exception info
+
 ## Install
 
 ```bash
