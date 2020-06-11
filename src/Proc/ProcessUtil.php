@@ -1,51 +1,50 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Created by PhpStorm.
- * User: inhere
- * Date: 2017-12-21
- * Time: 13:37
+ * This file is part of toolkit/sys-utils.
+ *
+ * @author   https://github.com/inhere
+ * @link     https://github.com/php-toolkit/sys-utils
+ * @license  MIT
  */
 
-namespace Toolkit\Sys;
+namespace Toolkit\Sys\Proc;
 
 use Closure;
 use RuntimeException;
-use function array_merge;
-use function cli_set_process_title;
-use function error_get_last;
-use function file_exists;
-use function file_get_contents;
-use function function_exists;
-use function getmypid;
-use function pcntl_alarm;
-use function pcntl_async_signals;
 use function pcntl_fork;
+use function pcntl_waitpid;
+use function pcntl_wexitstatus;
+use function array_merge;
+use function posix_kill;
+use function time;
+use function usleep;
 use function pcntl_signal;
 use function pcntl_signal_dispatch;
 use function pcntl_signal_get_handler;
-use function pcntl_waitpid;
-use function pcntl_wexitstatus;
-use function posix_geteuid;
-use function posix_getgrnam;
+use function pcntl_async_signals;
 use function posix_getpid;
-use function posix_getpwnam;
+use function getmypid;
+use function file_exists;
+use function file_get_contents;
+use function unlink;
 use function posix_getpwuid;
 use function posix_getuid;
-use function posix_kill;
+use function pcntl_alarm;
+use function cli_set_process_title;
+use function setproctitle;
+use function error_get_last;
+use function posix_getpwnam;
+use function posix_getgrnam;
 use function posix_setgid;
 use function posix_setuid;
-use function setproctitle;
-use function time;
-use function unlink;
-use function usleep;
+use function posix_geteuid;
+use function function_exists;
 use const PHP_OS;
-use const SIGALRM;
-use const SIGTERM;
 
 /**
  * Class ProcessUtil
  *
- * @package Toolkit\Sys
+ * @package Toolkit\Sys\Proc
  */
 class ProcessUtil
 {
@@ -53,11 +52,15 @@ class ProcessUtil
      * @var array
      */
     public static $signalMap = [
-        SIGINT  => 'SIGINT(Ctrl+C)',
-        SIGTERM => 'SIGTERM',
-        SIGKILL => 'SIGKILL',
-        SIGSTOP => 'SIGSTOP',
+        Signal::INT  => 'SIGINT(Ctrl+C)',
+        Signal::TERM => 'SIGTERM',
+        Signal::KILL => 'SIGKILL',
+        Signal::STOP => 'SIGSTOP',
     ];
+
+    /**********************************************************************
+     * create child process `pcntl`
+     *********************************************************************/
 
     /**
      * fork/create a child process.
@@ -108,7 +111,6 @@ class ProcessUtil
      * @param int           $id
      *
      * @return array|false
-     * @throws RuntimeException
      * @see ProcessUtil::fork()
      */
     public static function create(callable $onStart = null, callable $onError = null, $id = 0)
@@ -257,7 +259,7 @@ class ProcessUtil
      *
      * @return bool
      */
-    public static function stopWorkers(array $children, int $signal = SIGTERM, array $events = []): bool
+    public static function stopWorkers(array $children, int $signal = Signal::TERM, array $events = []): bool
     {
         if (!$children) {
             return false;
@@ -303,7 +305,7 @@ class ProcessUtil
      */
     public static function kill(int $pid, bool $force = false, int $timeout = 3): bool
     {
-        return self::sendSignal($pid, $force ? SIGKILL : SIGTERM, $timeout);
+        return self::sendSignal($pid, $force ? Signal::KILL : Signal::TERM, $timeout);
     }
 
     /**
@@ -512,7 +514,7 @@ class ProcessUtil
     }
 
     /**************************************************************************************
-     * some help method
+     * basic process method
      *************************************************************************************/
 
     /**
@@ -585,7 +587,7 @@ class ProcessUtil
             return false;
         }
 
-        self::installSignal(SIGALRM, $handler);
+        self::installSignal(Signal::ALRM, $handler);
 
         return pcntl_alarm($seconds);
     }
@@ -596,21 +598,6 @@ class ProcessUtil
     public static function clearAlarm(): int
     {
         return pcntl_alarm(-1);
-    }
-
-    /**
-     * run a command. it is support windows
-     *
-     * @param string      $command
-     * @param string|null $cwd
-     *
-     * @return array
-     * @throws RuntimeException
-     * @deprecated Please use Sys::run()
-     */
-    public static function run(string $command, string $cwd = null): array
-    {
-        return Sys::run($command, $cwd);
     }
 
     /**
@@ -702,7 +689,7 @@ class ProcessUtil
      */
     public static function hasPcntl(): bool
     {
-        return !Sys::isWindows() && function_exists('pcntl_fork');
+        return !OSEnv::isWindows() && function_exists('pcntl_fork');
     }
 
     /**
@@ -710,6 +697,6 @@ class ProcessUtil
      */
     public static function hasPosix(): bool
     {
-        return !Sys::isWindows() && function_exists('posix_kill');
+        return !OSEnv::isWindows() && function_exists('posix_kill');
     }
 }

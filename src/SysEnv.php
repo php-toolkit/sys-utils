@@ -1,106 +1,24 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Created by PhpStorm.
- * User: inhere
- * Date: 2017/6/9
- * Time: 下午10:06
+ * This file is part of toolkit/sys-utils.
+ *
+ * @author   https://github.com/inhere
+ * @link     https://github.com/php-toolkit/sys-utils
+ * @license  MIT
  */
 
 namespace Toolkit\Sys;
 
+use Toolkit\Stdlib\OS;
 use function defined;
-use function function_exists;
-use function getmyuid;
-use function in_array;
-use function php_uname;
-use function posix_getuid;
-use function stripos;
 
 /**
  * Class EnvHelper
  *
- * @package Toolkit\Sys
+ * @package Toolkit\Sys\Proc
  */
-class SysEnv
+class SysEnv extends OS
 {
-    /**************************************************************************
-     * system env
-     *************************************************************************/
-
-    /**
-     * @return bool
-     */
-    public static function isUnix(): bool
-    {
-        $uNames = ['CYG', 'DAR', 'FRE', 'HP-', 'IRI', 'LIN', 'NET', 'OPE', 'SUN', 'UNI'];
-
-        return in_array(strtoupper(substr(PHP_OS, 0, 3)), $uNames, true);
-    }
-
-    /**
-     * @return bool
-     */
-    public static function isLinux(): bool
-    {
-        return stripos(PHP_OS, 'LIN') !== false;
-    }
-
-    /**
-     * @return bool
-     */
-    public static function isWin(): bool
-    {
-        return self::isWindows();
-    }
-
-    /**
-     * @return bool
-     */
-    public static function isWindows(): bool
-    {
-        return stripos(PHP_OS, 'WIN') !== false;
-    }
-
-    /**
-     * @return bool
-     */
-    public static function isMac(): bool
-    {
-        return stripos(PHP_OS, 'Darwin') !== false;
-    }
-
-    /**
-     * @return bool
-     */
-    public static function isRoot(): bool
-    {
-        if (function_exists('posix_getuid')) {
-            return posix_getuid() === 0;
-        }
-
-        return getmyuid() === 0;
-    }
-
-    /**
-     * @return string
-     */
-    public static function getHostname(): string
-    {
-        return php_uname('n');
-    }
-
-    /**
-     * @return string
-     */
-    public static function getNullDevice(): string
-    {
-        if (self::isUnix()) {
-            return '/dev/null';
-        }
-
-        return 'NUL';
-    }
-
     /**
      * @return bool
      */
@@ -129,17 +47,4 @@ class SysEnv
 
         return self::isInteractive(STDOUT);
     }
-
-    /**
-     * Returns if the file descriptor is an interactive terminal or not.
-     *
-     * @param int|resource $fileDescriptor
-     *
-     * @return boolean
-     */
-    public static function isInteractive($fileDescriptor): bool
-    {
-        return function_exists('posix_isatty') && @posix_isatty($fileDescriptor);
-    }
-
 }

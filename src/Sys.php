@@ -1,44 +1,33 @@
-<?php
+<?php declare(strict_types=1);
 /**
- * Created by PhpStorm.
- * User: inhere
- * Date: 2017/6/27
- * Time: 下午8:18
+ * This file is part of toolkit/sys-utils.
+ *
+ * @author   https://github.com/inhere
+ * @link     https://github.com/php-toolkit/sys-utils
+ * @license  MIT
  */
 
 namespace Toolkit\Sys;
 
 use RuntimeException;
+use Toolkit\Sys\Proc\ProcWrapper;
 use function chdir;
 use function exec;
-use function fclose;
 use function function_exists;
-use function getcwd;
 use function implode;
-use function is_resource;
-use function ob_end_clean;
-use function ob_get_contents;
 use function ob_start;
-use function passthru;
-use function pclose;
-use function popen;
-use function posix_getpwuid;
-use function posix_getuid;
 use function preg_match;
 use function preg_replace;
-use function proc_close;
-use function proc_open;
 use function shell_exec;
-use function sys_get_temp_dir;
 use function system;
 use function trim;
 
 /**
  * Class Sys
  *
- * @package Toolkit\Sys
+ * @package Toolkit\Sys\Proc
  */
-class Sys extends SysEnv
+class Sys
 {
     /**
      * @param string      $command
@@ -52,13 +41,12 @@ class Sys extends SysEnv
     {
         // If should run as another user, we must be on *nix and must have sudo privileges.
         $suDo = '';
-
-        if ($user && self::isUnix() && self::isRoot()) {
+        if ($user && SysEnv::isUnix() && SysEnv::isRoot()) {
             $suDo = "sudo -u $user";
         }
 
         // Start execution. Run in foreground (will block).
-        $logfile = $logfile ?: self::getNullDevice();
+        $logfile = $logfile ?: SysEnv::getNullDevice();
 
         // Start execution. Run in foreground (will block).
         exec("$suDo $command 1>> \"$logfile\" 2>&1", $dummy, $retVal);
@@ -73,50 +61,22 @@ class Sys extends SysEnv
     /**
      * run a command. it is support windows
      *
-     * @param string      $command
-     * @param string|null $cwd
+     * @param string $command
+     * @param string $cwd
      *
-     * @return array
+     * @return array [$code, $output, $error]
      * @throws RuntimeException
      */
-    public static function run(string $command, string $cwd = null): array
+    public static function run(string $command, string $cwd = ''): array
     {
-        $descriptors = [
-            0 => ['pipe', 'r'], // stdin - read channel
-            1 => ['pipe', 'w'], // stdout - write channel
-            2 => ['pipe', 'w'], // stdout - error channel
-            3 => ['pipe', 'r'], // stdin - This is the pipe we can feed the password into
-        ];
-
-        $process = proc_open($command, $descriptors, $pipes, $cwd);
-
-        if (!is_resource($process)) {
-            throw new RuntimeException("Can't open resource with proc_open.");
-        }
-
-        // Nothing to push to input.
-        fclose($pipes[0]);
-
-        $output = stream_get_contents($pipes[1]);
-        fclose($pipes[1]);
-
-        $error = stream_get_contents($pipes[2]);
-        fclose($pipes[2]);
-
-        // TODO: Write passphrase in pipes[3].
-        fclose($pipes[3]);
-
-        // Close all pipes before proc_close! $code === 0 is success.
-        $code = proc_close($process);
-
-        return [$code, $output, $error];
+        return ProcWrapper::runCmd($command, $cwd);
     }
 
     /**
      * Method to execute a command in the sys
      * Uses :
      * 1. system
-     * 2. passthru
+     * X. passthru - will report error on windows
      * 3. exec
      * 4. shell_exec
      *
@@ -126,9 +86,9 @@ class Sys extends SysEnv
      *
      * @return array|string
      */
-    public static function execute(string $command, bool $returnStatus = true, string $cwd = null)
+    public static function execute(string $command, bool $returnStatus = true, string $cwd = '')
     {
-        $exitStatus = 1;
+        $status = 1;
 
         if ($cwd) {
             chdir($cwd);
@@ -137,101 +97,29 @@ class Sys extends SysEnv
         // system
         if (function_exists('system')) {
             ob_start();
-            system($command, $exitStatus);
-            $output = ob_get_contents();
-            ob_end_clean();
-
-            // passthru
-        } elseif (function_exists('passthru')) {
-            ob_start();
-            passthru($command, $exitStatus);
-            $output = ob_get_contents();
-            ob_end_clean();
-            //exec
+            system($command, $status);
+            $output = ob_get_clean();
+        //exec
         } elseif (function_exists('exec')) {
-            exec($command, $output, $exitStatus);
+            exec($command, $output, $status);
             $output = implode("\n", $output);
 
-            //shell_exec
+        //shell_exec
         } elseif (function_exists('shell_exec')) {
             $output = shell_exec($command);
         } else {
-            $output     = 'Command execution not possible on this system';
-            $exitStatus = 0;
+            $status = -1;
+            $output = 'Command execution not possible on this system';
         }
 
         if ($returnStatus) {
             return [
                 'output' => trim($output),
-                'status' => $exitStatus
+                'status' => $status
             ];
         }
 
         return trim($output);
-    }
-
-    /**
-     * run a command in background
-     *
-     * @param string $cmd
-     */
-    public static function bgExec(string $cmd): void
-    {
-        self::execInBackground($cmd);
-    }
-
-    /**
-     * run a command in background
-     *
-     * @param string $cmd
-     */
-    public static function execInBackground(string $cmd): void
-    {
-        if (self::isWindows()) {
-            pclose(popen('start /B ' . $cmd, 'r'));
-        } else {
-            exec($cmd . ' > /dev/null &');
-        }
-    }
-
-    /**
-     * Get unix user of current process.
-     *
-     * @return array
-     */
-    public static function getCurrentUser(): array
-    {
-        return posix_getpwuid(posix_getuid());
-    }
-
-    /**
-     * @return string
-     */
-    public static function tempDir(): string
-    {
-        return self::getTempDir();
-    }
-
-    /**
-     * @return string
-     */
-    public static function getTempDir(): string
-    {
-        // @codeCoverageIgnoreStart
-        if (function_exists('sys_get_temp_dir')) {
-            $tmp = sys_get_temp_dir();
-        } elseif (!empty($_SERVER['TMP'])) {
-            $tmp = $_SERVER['TMP'];
-        } elseif (!empty($_SERVER['TEMP'])) {
-            $tmp = $_SERVER['TEMP'];
-        } elseif (!empty($_SERVER['TMPDIR'])) {
-            $tmp = $_SERVER['TMPDIR'];
-        } else {
-            $tmp = getcwd();
-        }
-        // @codeCoverageIgnoreEnd
-
-        return $tmp;
     }
 
     /**
@@ -302,8 +190,11 @@ class Sys extends SysEnv
             // try stty if available
             $stty = [];
 
-            if (exec('stty -a 2>&1', $stty) && preg_match('/rows\s+(\d+);\s*columns\s+(\d+);/mi', implode(' ', $stty),
-                    $matches)
+            if (exec('stty -a 2>&1', $stty) && preg_match(
+                '/rows\s+(\d+);\s*columns\s+(\d+);/mi',
+                implode(' ', $stty),
+                $matches
+            )
             ) {
                 return ($size = [$matches[2], $matches[1]]);
             }
@@ -319,7 +210,7 @@ class Sys extends SysEnv
             }
         }
 
-        if (self::isWindows()) {
+        if (SysEnv::isWindows()) {
             $output = [];
             exec('mode con', $output);
 
@@ -345,9 +236,7 @@ class Sys extends SysEnv
             return -1;
         }
 
-        $info = exec('ps aux | grep ' . $program . ' | grep -v grep | grep -v su | awk {"print $3"}');
-
-        return $info;
+        return exec('ps aux | grep ' . $program . ' | grep -v grep | grep -v su | awk {"print $3"}');
     }
 
     /**
@@ -361,8 +250,6 @@ class Sys extends SysEnv
             return -1;
         }
 
-        $info = exec('ps aux | grep ' . $program . ' | grep -v grep | grep -v su | awk {"print $4"}');
-
-        return $info;
+        return exec('ps aux | grep ' . $program . ' | grep -v grep | grep -v su | awk {"print $4"}');
     }
 }
