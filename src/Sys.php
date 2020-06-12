@@ -27,7 +27,7 @@ use function trim;
  *
  * @package Toolkit\Sys\Proc
  */
-class Sys
+class Sys extends SysEnv
 {
     /**
      * @param string      $command
