@@ -59,4 +59,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ env.RELEASE_TAG }}
           name: ${{ env.RELEASE_TAG }}
-          files: kite-${{ env.RELEASE_TAG }}.phar
+#          files: kite-${{ env.RELEASE_TAG }}.phar
