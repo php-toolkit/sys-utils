@@ -11,6 +11,7 @@ namespace Toolkit\Sys\Proc;
 
 use Closure;
 use RuntimeException;
+use Toolkit\Stdlib\OS;
 use function pcntl_fork;
 use function pcntl_waitpid;
 use function pcntl_wexitstatus;
@@ -689,7 +690,7 @@ class ProcessUtil
      */
     public static function hasPcntl(): bool
     {
-        return !OSEnv::isWindows() && function_exists('pcntl_fork');
+        return !OS::isWindows() && function_exists('pcntl_fork');
     }
 
     /**
@@ -697,6 +698,6 @@ class ProcessUtil
      */
     public static function hasPosix(): bool
     {
-        return !OSEnv::isWindows() && function_exists('posix_kill');
+        return !OS::isWindows() && function_exists('posix_kill');
     }
 }
