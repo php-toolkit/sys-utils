@@ -221,6 +221,12 @@ class ProcWrapper
 
         $workDir = $this->workDir;
         $options = $this->options;
+
+        $options['suppress_errors'] = true;
+        if ('\\' === \DIRECTORY_SEPARATOR) {
+            $options['bypass_shell'] = true;
+        }
+
         $process = proc_open($command, $this->descriptors, $this->pipes, $workDir, $this->runENV, $options);
 
         if (!is_resource($process)) {

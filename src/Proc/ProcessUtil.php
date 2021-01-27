@@ -32,7 +32,6 @@ use function posix_getpwuid;
 use function posix_getuid;
 use function pcntl_alarm;
 use function cli_set_process_title;
-use function setproctitle;
 use function error_get_last;
 use function posix_getpwnam;
 use function posix_getgrnam;
@@ -58,6 +57,40 @@ class ProcessUtil
         Signal::KILL => 'SIGKILL',
         Signal::STOP => 'SIGSTOP',
     ];
+
+    /**
+     * Returns whether TTY is supported on the current operating system.
+     */
+    public static function isTtySupported(): bool
+    {
+        static $isTtySupported;
+
+        if (null === $isTtySupported) {
+            $isTtySupported = (bool) @proc_open('echo 1 >/dev/null', [['file', '/dev/tty', 'r'], ['file', '/dev/tty', 'w'], ['file', '/dev/tty', 'w']], $pipes);
+        }
+
+        return $isTtySupported;
+    }
+
+    /**
+     * Returns whether PTY is supported on the current operating system.
+     *
+     * @return bool
+     */
+    public static function isPtySupported(): bool
+    {
+        static $result;
+
+        if (null !== $result) {
+            return $result;
+        }
+
+        if ('\\' === \DIRECTORY_SEPARATOR) {
+            return $result = false;
+        }
+
+        return $result = (bool) @proc_open('echo 1 >/dev/null', [['pty'], ['pty'], ['pty']], $pipes);
+    }
 
     /**********************************************************************
      * create child process `pcntl`
