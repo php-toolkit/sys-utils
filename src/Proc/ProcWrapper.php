@@ -15,6 +15,7 @@ use function array_keys;
 use function fclose;
 use function proc_open;
 use function stream_get_contents;
+use const DIRECTORY_SEPARATOR;
 
 /**
  * Class ProcFuncWrapper
@@ -223,7 +224,7 @@ class ProcWrapper
         $options = $this->options;
 
         $options['suppress_errors'] = true;
-        if ('\\' === \DIRECTORY_SEPARATOR) {
+        if ('\\' === DIRECTORY_SEPARATOR) { // windows
             $options['bypass_shell'] = true;
         }
 

@@ -165,6 +165,35 @@ class Sys extends SysEnv
     }
 
     /**
+     * Open browser URL
+     *
+     * Mac：
+     * open 'https://swoft.org'
+     *
+     * Linux:
+     * x-www-browser 'https://swoft.org'
+     *
+     * Windows:
+     * cmd /c start https://swoft.org
+     *
+     * @param string $pageUrl
+     */
+    public static function openBrowser(string $pageUrl): void
+    {
+        if (self::isMac()) {
+            $cmd = "open \"{$pageUrl}\"";
+        } elseif (self::isWin()) {
+            // $cmd = 'cmd /c start';
+            $cmd = "start {$pageUrl}";
+        } else {
+            $cmd = "x-www-browser \"{$pageUrl}\"";
+        }
+
+        // Show::info("Will open the page on browser:\n  $pageUrl");
+        self::execute($cmd);
+    }
+
+    /**
      * get screen size
      *
      * ```php
