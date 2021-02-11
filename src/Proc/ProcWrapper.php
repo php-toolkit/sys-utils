@@ -31,9 +31,9 @@ class ProcWrapper
     private $command;
 
     /**
-     * @var string
+     * @var string|null
      */
-    private $workDir = '';
+    private $workDir;
 
     /**
      * @var array
@@ -100,12 +100,17 @@ class ProcWrapper
      */
     public static function runCmd(string $command, string $workDir = ''): array
     {
+        $isWindowsOS = '\\' === DIRECTORY_SEPARATOR;
         $descriptors = [
             0 => ['pipe', 'r'], // stdin - read channel
             1 => ['pipe', 'w'], // stdout - write channel
             2 => ['pipe', 'w'], // stdout - error channel
             3 => ['pipe', 'r'], // stdin - This is the pipe we can feed the password into
         ];
+
+        if ($isWindowsOS) {
+            unset($descriptors[3]);
+        }
 
         $proc = new ProcWrapper($command, $descriptors);
         $proc->run($workDir);
@@ -121,12 +126,13 @@ class ProcWrapper
         $error = stream_get_contents($pipes[2]);
         fclose($pipes[2]);
 
-        // TODO: Write passphrase in pipes[3].
-        fclose($pipes[3]);
+        if (!$isWindowsOS) {
+            // TODO: Write passphrase in pipes[3].
+            fclose($pipes[3]);
+        }
 
         // Close all pipes before proc_close! $code === 0 is success.
         $code = $proc->close();
-
         return [$code, $output, $error];
     }
 
@@ -220,7 +226,7 @@ class ProcWrapper
             throw new InvalidArgumentException('The want execute command is cannot be empty');
         }
 
-        $workDir = $this->workDir;
+        $workDir = $this->workDir ?: null;
         $options = $this->options;
 
         $options['suppress_errors'] = true;
@@ -228,6 +234,14 @@ class ProcWrapper
             $options['bypass_shell'] = true;
         }
 
+        // ERROR on windows
+        //  proc_open(): CreateProcess failed, error code - 123
+        //
+        // https://docs.microsoft.com/zh-cn/windows/win32/debug/system-error-codes--0-499-
+        // The filename, directory name, or volume label syntax is incorrect.
+        // FIX:
+        //  1. runCmd() not set $descriptors[3] on windows
+        //  2. $workDir set as null when is empty.
         $process = proc_open($command, $this->descriptors, $this->pipes, $workDir, $this->runENV, $options);
 
         if (!is_resource($process)) {
@@ -357,9 +371,9 @@ class ProcWrapper
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getWorkDir(): string
+    public function getWorkDir(): ?string
     {
         return $this->workDir;
     }
