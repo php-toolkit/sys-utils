@@ -51,15 +51,20 @@ class Exec
      *
      * @return array
      */
-    public static function system(string $command, string $workDir = ''): array
+    public static function system(string $command, string $workDir = '', bool $allReturn = false): array
     {
         if ($workDir) {
             chdir($workDir);
         }
 
-        ob_start();
-        system($command, $status);
-        $output = ob_get_clean();
+        if ($allReturn) {
+            ob_start();
+            system($command, $status);
+            $output = ob_get_clean();
+        } else {
+            // only last line message
+            $output = system($command, $status);
+        }
 
         return [$status, $output];
     }

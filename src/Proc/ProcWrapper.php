@@ -409,6 +409,18 @@ class ProcWrapper
     }
 
     /**
+     * @param index $index
+     * @param array $spec
+     *
+     * @return ProcWrapper
+     */
+    public function setDescriptor(int $index, array $spec): self
+    {
+        $this->descriptors[$index] = $spec;
+        return $this;
+    }
+
+    /**
      * @param array $descriptors
      *
      * @return ProcWrapper
