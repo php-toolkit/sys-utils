@@ -11,6 +11,8 @@ namespace Toolkit\Sys;
 
 use Toolkit\Stdlib\OS;
 use function defined;
+use function getenv;
+use function putenv;
 
 /**
  * Class EnvHelper
@@ -46,5 +48,27 @@ class SysEnv extends OS
         }
 
         return self::isInteractive(STDOUT);
+    }
+
+    /**
+     * @param string $key
+     * @param string $default
+     *
+     * @return string
+     */
+    public static function getEnv(string $key, string $default = ''): string
+    {
+        return getenv($key) ?: $default;
+    }
+
+    /**
+     * @param string $key
+     * @param string|int $value
+     *
+     * @return bool
+     */
+    public static function setEnv(string $key, $value): bool
+    {
+        return putenv($key . '=' . $value);
     }
 }

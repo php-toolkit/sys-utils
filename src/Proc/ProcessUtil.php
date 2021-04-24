@@ -39,6 +39,7 @@ use function posix_setgid;
 use function posix_setuid;
 use function posix_geteuid;
 use function function_exists;
+use const DIRECTORY_SEPARATOR;
 use const PHP_OS;
 
 /**
@@ -66,7 +67,11 @@ class ProcessUtil
         static $isTtySupported;
 
         if (null === $isTtySupported) {
-            $isTtySupported = (bool) @proc_open('echo 1 >/dev/null', [['file', '/dev/tty', 'r'], ['file', '/dev/tty', 'w'], ['file', '/dev/tty', 'w']], $pipes);
+            $isTtySupported = (bool)@proc_open('echo 1 >/dev/null', [
+                ['file', '/dev/tty', 'r'],
+                ['file', '/dev/tty', 'w'],
+                ['file', '/dev/tty', 'w']
+            ], $pipes);
         }
 
         return $isTtySupported;
@@ -85,7 +90,7 @@ class ProcessUtil
             return $result;
         }
 
-        if ('\\' === \DIRECTORY_SEPARATOR) {
+        if ('\\' === DIRECTORY_SEPARATOR) {
             return $result = false;
         }
 
@@ -180,17 +185,13 @@ class ProcessUtil
                 // chdir('/');
                 // umask(0);
                 break;
-
             case -1: // fork failed.
                 throw new RuntimeException('Fork new process is failed! exiting');
-                break;
-
             default: // at parent
                 if ($beforeQuit) {
                     $beforeQuit($pid);
                 }
-
-                exit;
+                exit(0);
         }
 
         return $pid;
@@ -231,9 +232,9 @@ class ProcessUtil
         }
 
         $pidAry = [];
-
         for ($id = 0; $id < $number; $id++) {
-            $info                 = self::fork($onStart, $onError, $id);
+            $info = self::fork($onStart, $onError, $id);
+            // log
             $pidAry[$info['pid']] = $info;
         }
 
