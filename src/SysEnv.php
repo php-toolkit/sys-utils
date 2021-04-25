@@ -11,6 +11,7 @@ namespace Toolkit\Sys;
 
 use Toolkit\Stdlib\OS;
 use function defined;
+use function explode;
 use function getenv;
 use function putenv;
 
@@ -70,5 +71,19 @@ class SysEnv extends OS
     public static function setEnv(string $key, $value): bool
     {
         return putenv($key . '=' . $value);
+    }
+
+    /**
+     * @return array
+     */
+    public static function getEnvPaths(): array
+    {
+        $pathStr = $_SERVER['PATH'] ?? '';
+        if (!$pathStr) {
+            return [];
+        }
+
+        $sepChar = self::isWindows() ? ';' : ':';
+        return explode($sepChar, $pathStr);
     }
 }

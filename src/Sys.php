@@ -15,12 +15,14 @@ use function chdir;
 use function exec;
 use function function_exists;
 use function implode;
+use function is_file;
 use function ob_start;
 use function preg_match;
 use function preg_replace;
 use function shell_exec;
 use function system;
 use function trim;
+use const DIRECTORY_SEPARATOR;
 
 /**
  * Class Sys
@@ -280,5 +282,44 @@ class Sys extends SysEnv
         }
 
         return exec('ps aux | grep ' . $program . ' | grep -v grep | grep -v su | awk {"print $4"}');
+    }
+
+    /**
+     * find executable file by input
+     *
+     * Usage:
+     *
+     * ```php
+     * $phpBin = Sys::findExecutable('php');
+     * echo $phpBin; // "/usr/bin/php"
+     * ```
+     *
+     * @param string $name
+     * @param array  $paths The dir paths for find bin file. if empty, will read from env $PATH
+     *
+     * @return string
+     */
+    public static function findExecutable(string $name, array $paths = []): string
+    {
+        $paths = $paths ?: self::getEnvPaths();
+
+        foreach ($paths as $path) {
+            $filename = $path . DIRECTORY_SEPARATOR . $name;
+            if (is_file($filename)) {
+                return $filename;
+            }
+        }
+        return "";
+    }
+
+    /**
+     * @param string $name
+     * @param array  $paths
+     *
+     * @return bool
+     */
+    public static function isExecutable(string $name, array $paths = []): bool
+    {
+        return self::findExecutable($name, $paths) !== "";
     }
 }
