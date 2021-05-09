@@ -48,6 +48,7 @@ class Exec
     /**
      * @param string $command
      * @param string $workDir
+     * @param bool   $allReturn
      *
      * @return array
      */
