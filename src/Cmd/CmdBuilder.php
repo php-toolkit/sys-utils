@@ -10,6 +10,7 @@
 namespace Toolkit\Sys\Cmd;
 
 use Toolkit\Stdlib\Str;
+use function sprintf;
 use function strpos;
 
 /**
@@ -76,6 +77,18 @@ class CmdBuilder extends AbstractCmdBuilder
     public function add($arg): self
     {
         $this->args[] = $arg;
+        return $this;
+    }
+
+    /**
+     * @param string $format
+     * @param mixed  ...$a
+     *
+     * @return $this
+     */
+    public function addf(string $format, ...$a): self
+    {
+        $this->args[] = sprintf($format, ...$a);
         return $this;
     }
 
