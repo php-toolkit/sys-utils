@@ -11,7 +11,6 @@ namespace Toolkit\Sys\Cmd;
 
 use Toolkit\Stdlib\Str;
 use function sprintf;
-use function strpos;
 
 /**
  * class CmdBuilder
@@ -93,14 +92,14 @@ class CmdBuilder extends AbstractCmdBuilder
     }
 
     /**
-     * @param string|int $arg
-     * @param bool       $isOk
+     * @param string|int      $arg
+     * @param bool|int|string $ifExpr
      *
      * @return $this
      */
-    public function addIf($arg, bool $isOk): self
+    public function addIf($arg, $ifExpr): self
     {
-        if ($isOk) {
+        if ($ifExpr) {
             $this->args[] = $arg;
         }
 
