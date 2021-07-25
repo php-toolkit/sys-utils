@@ -10,12 +10,12 @@
 namespace Toolkit\Sys\Traits;
 
 use RuntimeException;
-use function get_defined_constants;
-use function in_array;
 use function defined;
-use function function_exists;
 use function extension_loaded;
+use function function_exists;
+use function get_defined_constants;
 use function get_loaded_extensions;
+use function in_array;
 
 /**
  * Trait PhpEnvTrait

@@ -12,33 +12,33 @@ namespace Toolkit\Sys\Proc;
 use Closure;
 use RuntimeException;
 use Toolkit\Stdlib\OS;
-use function pcntl_fork;
-use function pcntl_waitpid;
-use function pcntl_wexitstatus;
 use function array_merge;
-use function posix_kill;
-use function time;
-use function usleep;
+use function cli_set_process_title;
+use function error_get_last;
+use function file_exists;
+use function file_get_contents;
+use function function_exists;
+use function getmypid;
+use function pcntl_alarm;
+use function pcntl_async_signals;
+use function pcntl_fork;
 use function pcntl_signal;
 use function pcntl_signal_dispatch;
 use function pcntl_signal_get_handler;
-use function pcntl_async_signals;
+use function pcntl_waitpid;
+use function pcntl_wexitstatus;
+use function posix_geteuid;
+use function posix_getgrnam;
 use function posix_getpid;
-use function getmypid;
-use function file_exists;
-use function file_get_contents;
-use function unlink;
+use function posix_getpwnam;
 use function posix_getpwuid;
 use function posix_getuid;
-use function pcntl_alarm;
-use function cli_set_process_title;
-use function error_get_last;
-use function posix_getpwnam;
-use function posix_getgrnam;
+use function posix_kill;
 use function posix_setgid;
 use function posix_setuid;
-use function posix_geteuid;
-use function function_exists;
+use function time;
+use function unlink;
+use function usleep;
 use const DIRECTORY_SEPARATOR;
 use const PHP_OS;
 
@@ -94,7 +94,7 @@ class ProcessUtil
             return $result = false;
         }
 
-        return $result = (bool) @proc_open('echo 1 >/dev/null', [['pty'], ['pty'], ['pty']], $pipes);
+        return $result = (bool)@proc_open('echo 1 >/dev/null', [['pty'], ['pty'], ['pty']], $pipes);
     }
 
     /**********************************************************************

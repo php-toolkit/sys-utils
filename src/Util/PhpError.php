@@ -9,21 +9,21 @@
 
 namespace Toolkit\Sys\Util;
 
+use const E_COMPILE_ERROR;
 use const E_COMPILE_WARNING;
-use const E_ERROR;
-use const E_PARSE;
-use const E_WARNING;
-use const E_NOTICE;
 use const E_CORE_ERROR;
 use const E_CORE_WARNING;
-use const E_COMPILE_ERROR;
-use const E_USER_ERROR;
-use const E_USER_WARNING;
-use const E_USER_NOTICE;
-use const E_STRICT;
-use const E_RECOVERABLE_ERROR;
 use const E_DEPRECATED;
+use const E_ERROR;
+use const E_NOTICE;
+use const E_PARSE;
+use const E_RECOVERABLE_ERROR;
+use const E_STRICT;
 use const E_USER_DEPRECATED;
+use const E_USER_ERROR;
+use const E_USER_NOTICE;
+use const E_USER_WARNING;
+use const E_WARNING;
 
 /**
  * Class PhpError

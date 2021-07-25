@@ -10,9 +10,9 @@
 namespace Toolkit\Sys\Util;
 
 use Throwable;
-use function strip_tags;
 use function get_class;
 use function json_encode;
+use function strip_tags;
 
 /**
  * Class PhpException
@@ -23,8 +23,8 @@ class PhpException
 {
     /**
      * @param Throwable $e
-     * @param bool $getTrace
-     * @param null $catcher
+     * @param bool      $getTrace
+     * @param null      $catcher
      *
      * @return string
      * @see PhpException::toHtml()
@@ -37,10 +37,10 @@ class PhpException
     /**
      * Converts an exception into a simple string.
      *
-     * @param Throwable $e the exception being converted
-     * @param bool                  $clearHtml
-     * @param bool                  $getTrace
-     * @param null|string           $catcher
+     * @param Throwable   $e the exception being converted
+     * @param bool        $clearHtml
+     * @param bool        $getTrace
+     * @param null|string $catcher
      *
      * @return string the string representation of the exception.
      */
@@ -67,9 +67,9 @@ class PhpException
     /**
      * Converts an exception into a simple array.
      *
-     * @param Throwable $e the exception being converted
-     * @param bool                  $getTrace
-     * @param null|string           $catcher
+     * @param Throwable   $e the exception being converted
+     * @param bool        $getTrace
+     * @param null|string $catcher
      *
      * @return array
      */
@@ -96,9 +96,9 @@ class PhpException
     /**
      * Converts an exception into a json string.
      *
-     * @param Throwable $e the exception being converted
-     * @param bool                  $getTrace
-     * @param null|string           $catcher
+     * @param Throwable   $e the exception being converted
+     * @param bool        $getTrace
+     * @param null|string $catcher
      *
      * @return string the string representation of the exception.
      */
