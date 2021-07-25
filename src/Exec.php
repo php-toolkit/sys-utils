@@ -12,13 +12,16 @@ namespace Toolkit\Sys;
 use RuntimeException;
 use Toolkit\Sys\Proc\ProcWrapper;
 use function chdir;
+use function exec;
+use function function_exists;
 use function implode;
 use function ob_get_clean;
 use function ob_start;
 use function pclose;
 use function popen;
+use function shell_exec;
 use function system;
-use function exec;
+use function trim;
 
 /**
  * Class Exec
@@ -121,5 +124,97 @@ class Exec
     public static function run(string $command, string $cwd = ''): array
     {
         return ProcWrapper::runCmd($command, $cwd);
+    }
+
+    /**
+     * Method to execute a command in the sys
+     * Uses :
+     * 1. system
+     * X. passthru - will report error on windows
+     * 3. exec
+     * 4. shell_exec
+     *
+     * @param string      $command
+     * @param bool        $returnStatus
+     * @param string|null $cwd
+     *
+     * @return array|string
+     */
+    public static function auto(string $command, bool $returnStatus = true, string $cwd = '')
+    {
+        $status = 1;
+
+        if ($cwd) {
+            chdir($cwd);
+        }
+
+        // system
+        if (function_exists('system')) {
+            ob_start();
+            system($command, $status);
+            $output = ob_get_clean();
+            //exec
+        } elseif (function_exists('exec')) {
+            exec($command, $output, $status);
+            $output = implode("\n", $output);
+
+            //shell_exec
+        } elseif (function_exists('shell_exec')) {
+            $output = shell_exec($command);
+        } else {
+            $status = -1;
+            $output = 'Command execution not possible on this system';
+        }
+
+        if ($returnStatus) {
+            return [
+                'output' => trim($output),
+                'status' => $status
+            ];
+        }
+
+        return trim($output);
+    }
+
+    /**
+     * @param string $command
+     * @param string $logfile
+     * @param string $user
+     *
+     * @return mixed
+     * @throws RuntimeException
+     */
+    public static function execWithSudo(string $command, string $logfile = '', string $user = '')
+    {
+        // If should run as another user, we must be on *nix and must have sudo privileges.
+        $suDo = '';
+        if ($user && SysEnv::isUnix() && SysEnv::isRoot()) {
+            $suDo = "sudo -u $user";
+        }
+
+        // Start execution. Run in foreground (will block).
+        $logfile = $logfile ?: SysEnv::getNullDevice();
+
+        // Start execution. Run in foreground (will block).
+        exec("$suDo $command 1>> \"$logfile\" 2>&1", $dummy, $retVal);
+
+        if ($retVal !== 0) {
+            throw new RuntimeException("command exited with status '$retVal'.");
+        }
+
+        return $dummy;
+    }
+
+    /**
+     * Quick exec an command and return output
+     *
+     * @param string $command
+     * @param string $cwd
+     *
+     * @return string
+     */
+    public static function getOutput(string $command, string $cwd = ''): string
+    {
+        return self::auto($command, false, $cwd);
     }
 }

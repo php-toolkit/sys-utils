@@ -63,7 +63,7 @@ class SysEnv extends OS
     }
 
     /**
-     * @param string $key
+     * @param string     $key
      * @param string|int $value
      *
      * @return bool

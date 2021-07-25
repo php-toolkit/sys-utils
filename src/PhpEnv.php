@@ -10,7 +10,6 @@
 namespace Toolkit\Sys;
 
 use Toolkit\Sys\Traits\PhpEnvTrait;
-use Toolkit\Stdlib\Helper\PhpHelper;
 
 /**
  * Class Php - alias of the class PhpHelper
