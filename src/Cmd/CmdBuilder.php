@@ -124,7 +124,10 @@ class CmdBuilder extends AbstractCmdBuilder
      */
     public function addArgs(...$args): self
     {
-        $this->args = array_merge($this->args, $args);
+        if ($args) {
+            $this->args = array_merge($this->args, $args);
+        }
+
         return $this;
     }
 
@@ -154,7 +157,6 @@ class CmdBuilder extends AbstractCmdBuilder
         }
 
         $argString = implode(' ', $argList);
-
         return $this->bin . ' ' . $argString;
     }
 

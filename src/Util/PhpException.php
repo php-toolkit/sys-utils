@@ -29,7 +29,20 @@ class PhpException
      * @return string
      * @see PhpException::toHtml()
      */
-    public static function toString(Throwable $e, $getTrace = true, $catcher = null): string
+    public static function toText(Throwable $e, bool $getTrace = true, $catcher = null): string
+    {
+        return self::toHtml($e, $getTrace, $catcher, true);
+    }
+
+    /**
+     * @param Throwable $e
+     * @param bool      $getTrace
+     * @param null      $catcher
+     *
+     * @return string
+     * @see PhpException::toHtml()
+     */
+    public static function toString(Throwable $e, bool $getTrace = true, $catcher = null): string
     {
         return self::toHtml($e, $getTrace, $catcher, true);
     }
