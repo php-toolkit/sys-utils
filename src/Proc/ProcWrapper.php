@@ -12,7 +12,9 @@ namespace Toolkit\Sys\Proc;
 use InvalidArgumentException;
 use RuntimeException;
 use function array_keys;
+use function chdir;
 use function fclose;
+use function getcwd;
 use function proc_open;
 use function stream_get_contents;
 use const DIRECTORY_SEPARATOR;
@@ -226,8 +228,13 @@ class ProcWrapper
             throw new InvalidArgumentException('The want execute command is cannot be empty');
         }
 
+        $curDir = '';
         $workDir = $this->workDir ?: null;
         $options = $this->options;
+
+        if ($workDir) {
+            $curDir = getcwd();
+        }
 
         $options['suppress_errors'] = true;
         if ('\\' === DIRECTORY_SEPARATOR) { // windows
@@ -246,6 +253,11 @@ class ProcWrapper
 
         if (!is_resource($process)) {
             throw new RuntimeException("Can't open resource with proc_open.");
+        }
+
+        // fix: revert workdir after run end.
+        if ($curDir) {
+            chdir($curDir);
         }
 
         $this->process = $process;

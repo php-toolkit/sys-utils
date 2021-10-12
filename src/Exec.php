@@ -14,6 +14,7 @@ use Toolkit\Sys\Proc\ProcWrapper;
 use function chdir;
 use function exec;
 use function function_exists;
+use function getcwd;
 use function implode;
 use function ob_get_clean;
 use function ob_start;
@@ -57,7 +58,9 @@ class Exec
      */
     public static function system(string $command, string $workDir = '', bool $allReturn = false): array
     {
+        $curDir = '';
         if ($workDir) {
+            $curDir = getcwd();
             chdir($workDir);
         }
 
@@ -68,6 +71,11 @@ class Exec
         } else {
             // only last line message
             $output = system($command, $status);
+        }
+
+        // fix: revert workdir after run end.
+        if ($curDir) {
+            chdir($curDir);
         }
 
         return [$status, $output];
@@ -81,11 +89,19 @@ class Exec
      */
     public static function shellExec(string $command, string $workDir = ''): ?string
     {
+        $curDir = '';
         if ($workDir) {
+            $curDir = getcwd();
             chdir($workDir);
         }
 
-        return shell_exec($command);
+        $ret = shell_exec($command);
+        // fix: revert workdir after run end.
+        if ($curDir) {
+            chdir($curDir);
+        }
+
+        return $ret;
     }
 
     /**
@@ -143,8 +159,10 @@ class Exec
     public static function auto(string $command, bool $returnStatus = true, string $cwd = '')
     {
         $status = 1;
+        $curDir = '';
 
         if ($cwd) {
+            $curDir = getcwd();
             chdir($cwd);
         }
 
@@ -164,6 +182,11 @@ class Exec
         } else {
             $status = -1;
             $output = 'Command execution not possible on this system';
+        }
+
+        // fix: revert workdir after run end.
+        if ($curDir) {
+            chdir($curDir);
         }
 
         if ($returnStatus) {
