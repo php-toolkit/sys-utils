@@ -150,9 +150,9 @@ class Exec
      * 3. exec
      * 4. shell_exec
      *
-     * @param string      $command
-     * @param bool        $returnStatus
-     * @param string|null $cwd
+     * @param string $command
+     * @param bool $returnStatus
+     * @param string $cwd
      *
      * @return array|string
      */

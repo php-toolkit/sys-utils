@@ -14,12 +14,12 @@
     {
       "name": "inhere",
       "email": "in.798@qq.com",
-      "homepage": "http://www.yzone.net/"
+      "homepage": "https://github.com/inhere"
     }
   ],
   "require": {
-    "php": ">7.1.0",
-    "toolkit/stdlib": "~1.0"
+    "php": ">8.0.0",
+    "toolkit/stdlib": "~2.0"
   },
   "autoload": {
     "psr-4": {
@@ -27,7 +27,7 @@
     }
   },
   "suggest": {
-    "inhere/php-validate": "Very lightweight data validate tool",
+    "toolkit/cli-utils": "useful cli tool library of the php",
     "inhere/console": "a lightweight php console application library."
   }
 }

@@ -105,17 +105,17 @@ class ProcessUtil
     /**
      * fork/create a child process.
      *
-     * @param callable|null $onStart Will running on the child process start.
-     * @param callable|null $onError
+     * @param null|callable(int, int):void $onStart Will running on the child process start.
+     * @param null|callable(int):void $onError
      * @param int $id      The process index number. will use `forks()`
      *
-     * @return array|false
+     * @return array{id: int, pid: int, startTime: int}
      * @throws RuntimeException
      */
-    public static function fork(callable $onStart = null, callable $onError = null, int $id = 0): bool|array
+    public static function fork(callable $onStart = null, callable $onError = null, int $id = 0): array
     {
         if (!self::hasPcntl()) {
-            return false;
+            return [];
         }
 
         $info = [];
@@ -178,7 +178,6 @@ class ProcessUtil
         switch ($pid) {
             case 0: // at new process
                 $pid = self::getPid();
-
                 if (posix_setsid() < 0) {
                     throw new RuntimeException('posix_setsid() execute failed! exiting');
                 }
@@ -219,17 +218,13 @@ class ProcessUtil
      * @param callable|null $onStart Will running on the child processes.
      * @param callable|null $onError
      *
-     * @return array|false
+     * @return array<int, array{id: int, pid: int, startTime: int}>
      * @throws RuntimeException
      */
-    public static function forks(int $number, callable $onStart = null, callable $onError = null): bool|array
+    public static function forks(int $number, callable $onStart = null, callable $onError = null): array
     {
-        if ($number <= 0) {
-            return false;
-        }
-
-        if (!self::hasPcntl()) {
-            return false;
+        if ($number <= 0 || !self::hasPcntl()) {
+            return [];
         }
 
         $pidAry = [];
@@ -672,7 +667,7 @@ class ProcessUtil
             throw new RuntimeException($error['message']);
         }
 
-        return false;
+        return true;
     }
 
     /**

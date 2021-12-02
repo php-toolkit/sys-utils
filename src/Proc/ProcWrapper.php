@@ -33,9 +33,9 @@ class ProcWrapper
     private string $command;
 
     /**
-     * @var string|null
+     * @var string
      */
-    private ?string $workDir;
+    private string $workDir = '';
 
     /**
      * @var array
@@ -54,7 +54,7 @@ class ProcWrapper
      *
      * @var array|null
      */
-    private ?array $runENV;
+    private ?array $runENV = null;
 
     /**
      * @var array
@@ -421,7 +421,7 @@ class ProcWrapper
     }
 
     /**
-     * @param index $index
+     * @param int $index
      * @param array $spec
      *
      * @return ProcWrapper
