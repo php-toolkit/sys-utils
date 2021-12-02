@@ -38,7 +38,7 @@ class SysFunc
      * @return false|resource
      * @see https://www.php.net/manual/zh/function.popen.php
      */
-    public static function popen(string $command, string $mode)
+    public static function popen(string $command, string $mode): bool
     {
         $handle = popen($command, $mode);
         if (false === $handle) {

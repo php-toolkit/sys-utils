@@ -30,22 +30,22 @@ class ProcWrapper
     /**
      * @var string
      */
-    private $command;
+    private string $command;
 
     /**
      * @var string|null
      */
-    private $workDir;
+    private ?string $workDir;
 
     /**
      * @var array
      */
-    private $descriptors;
+    private array $descriptors;
 
     /**
      * @var array
      */
-    private $pipes = [];
+    private array $pipes = [];
 
     /**
      * Set ENV for run command
@@ -54,12 +54,12 @@ class ProcWrapper
      *
      * @var array|null
      */
-    private $runENV;
+    private ?array $runENV;
 
     /**
      * @var array
      */
-    private $options = [];
+    private array $options = [];
 
     /**
      * @var resource
@@ -71,17 +71,17 @@ class ProcWrapper
     /**
      * @var int
      */
-    private $code = 0;
+    private int $code = 0;
 
     /**
      * @var string
      */
-    private $error = '';
+    private string $error = '';
 
     /**
      * @var string
      */
-    private $output = '';
+    private string $output = '';
 
     /**
      * @param string $command
@@ -270,7 +270,7 @@ class ProcWrapper
      *
      * @return false|string
      */
-    public function read(int $index, bool $close = true)
+    public function read(int $index, bool $close = true): bool|string
     {
         $thePipe = $this->getPipe($index);
         $output  = stream_get_contents($thePipe);

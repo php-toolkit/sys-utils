@@ -20,12 +20,12 @@ class CmdBuilder extends AbstractCmdBuilder
     /**
      * @var string
      */
-    protected $bin = '';
+    protected string $bin = '';
 
     /**
      * @var array|string[]
      */
-    protected $args = [];
+    protected array $args = [];
 
     /**
      * @param string $bin
@@ -69,11 +69,11 @@ class CmdBuilder extends AbstractCmdBuilder
     }
 
     /**
-     * @param string|int $arg
+     * @param int|string $arg
      *
      * @return $this
      */
-    public function add($arg): self
+    public function add(int|string $arg): self
     {
         $this->args[] = $arg;
         return $this;
@@ -92,12 +92,12 @@ class CmdBuilder extends AbstractCmdBuilder
     }
 
     /**
-     * @param string|int      $arg
+     * @param int|string $arg
      * @param bool|int|string $ifExpr
      *
      * @return $this
      */
-    public function addIf($arg, $ifExpr): self
+    public function addIf(int|string $arg, bool|int|string $ifExpr): self
     {
         if ($ifExpr) {
             $this->args[] = $arg;
@@ -107,11 +107,11 @@ class CmdBuilder extends AbstractCmdBuilder
     }
 
     /**
-     * @param string|int $arg
+     * @param int|string $arg
      *
      * @return $this
      */
-    public function addArg($arg): self
+    public function addArg(int|string $arg): self
     {
         $this->args[] = $arg;
         return $this;

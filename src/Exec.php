@@ -156,7 +156,7 @@ class Exec
      *
      * @return array|string
      */
-    public static function auto(string $command, bool $returnStatus = true, string $cwd = '')
+    public static function auto(string $command, bool $returnStatus = true, string $cwd = ''): array|string
     {
         $status = 1;
         $curDir = '';
@@ -207,7 +207,7 @@ class Exec
      * @return mixed
      * @throws RuntimeException
      */
-    public static function execWithSudo(string $command, string $logfile = '', string $user = '')
+    public static function execWithSudo(string $command, string $logfile = '', string $user = ''): mixed
     {
         // If should run as another user, we must be on *nix and must have sudo privileges.
         $suDo = '';

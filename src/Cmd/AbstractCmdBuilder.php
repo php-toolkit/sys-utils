@@ -25,51 +25,51 @@ abstract class AbstractCmdBuilder
     /**
      * @var string
      */
-    protected $command = '';
+    protected string $command = '';
 
     /**
      * @var string
      */
-    protected $workDir;
+    protected string $workDir;
 
     /**
      * @var int
      */
-    protected $code = 0;
+    protected int $code = 0;
 
     /**
      * @var string
      */
-    protected $error = '';
+    protected string $error = '';
 
     /**
      * @var string
      */
-    protected $output = '';
+    protected string $output = '';
 
     /**
      * Dry run all commands
      *
      * @var bool
      */
-    protected $dryRun = false;
+    protected bool $dryRun = false;
 
     /**
      * @var bool
      */
-    protected $printCmd = true;
+    protected bool $printCmd = true;
 
     /**
      * Ignore check prevision return code
      *
      * @var bool
      */
-    protected $ignoreError = false;
+    protected bool $ignoreError = false;
 
     /**
      * @var bool
      */
-    protected $printOutput = false;
+    protected bool $printOutput = false;
 
     /**
      * Class constructor.

@@ -30,7 +30,7 @@ class ShellUtil
         $shell = Exec::getOutput('echo $SHELL');
 
         // eg: '/bin/bash'
-        if ($onlyName && $shell && strpos($shell, '/') !== false) {
+        if ($onlyName && $shell && str_contains($shell, '/')) {
             $shell = basename($shell);
         }
 
@@ -103,7 +103,7 @@ class ShellUtil
      *
      * @return array|boolean An array of ($width, $height) or false when it was not able to determine size.
      */
-    public static function getScreenSize(bool $refresh = false)
+    public static function getScreenSize(bool $refresh = false): array|bool
     {
         static $size;
         if ($size !== null && !$refresh) {
@@ -138,7 +138,7 @@ class ShellUtil
             $output = [];
             exec('mode con', $output);
 
-            if (isset($output[1]) && strpos($output[1], 'CON') !== false) {
+            if (isset($output[1]) && str_contains($output[1], 'CON')) {
                 return ($size = [
                     (int)preg_replace('~\D~', '', $output[3]),
                     (int)preg_replace('~\D~', '', $output[4])

@@ -40,7 +40,9 @@ class SysEnv extends OS
     public static function isSupportColor(): bool
     {
         if (DIRECTORY_SEPARATOR === '\\') {
-            return '10.0.10586' === PHP_WINDOWS_VERSION_MAJOR . '.' . PHP_WINDOWS_VERSION_MINOR . '.' . PHP_WINDOWS_VERSION_BUILD || false !== getenv('ANSICON') || 'ON' === getenv('ConEmuANSI') || 'xterm' === getenv('TERM')// || 'cygwin' === getenv('TERM')
+            return '10.0.10586' === PHP_WINDOWS_VERSION_MAJOR . '.' . PHP_WINDOWS_VERSION_MINOR . '.' . PHP_WINDOWS_VERSION_BUILD
+                || false !== getenv('ANSICON') || 'ON' === getenv('ConEmuANSI') || 'xterm' === getenv('TERM')
+                // || 'cygwin' === getenv('TERM')
                 ;
         }
 
@@ -64,11 +66,11 @@ class SysEnv extends OS
 
     /**
      * @param string     $key
-     * @param string|int $value
+     * @param int|string $value
      *
      * @return bool
      */
-    public static function setEnv(string $key, $value): bool
+    public static function setEnv(string $key, int|string $value): bool
     {
         return putenv($key . '=' . $value);
     }

@@ -60,7 +60,7 @@ class ProcFunc
      */
     public static function getStatus($process): array
     {
-        return (array)proc_get_status($process);
+        return proc_get_status($process);
     }
 
     /**
@@ -80,12 +80,13 @@ class ProcFunc
      * Kills a process opened by `proc_open`
      *
      * @param resource $process
+     * @param int $signal
      *
      * @return bool
      * @see https://www.php.net/manual/en/function.proc-terminate.php
      */
-    public static function terminate($process): bool
+    public static function terminate($process, int $signal = 15): bool
     {
-        return proc_terminate($process);
+        return proc_terminate($process, $signal);
     }
 }

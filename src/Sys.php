@@ -32,7 +32,7 @@ class Sys extends SysEnv
      * @return mixed
      * @throws RuntimeException
      */
-    public static function execWithSudo(string $command, string $logfile = '', string $user = '')
+    public static function execWithSudo(string $command, string $logfile = '', string $user = ''): mixed
     {
         return \Toolkit\Sys\Exec::execWithSudo($command, $logfile, $user);
     }
@@ -65,7 +65,7 @@ class Sys extends SysEnv
      *
      * @return array|string
      */
-    public static function execute(string $command, bool $returnStatus = true, string $cwd = '')
+    public static function execute(string $command, bool $returnStatus = true, string $cwd = ''): array|string
     {
         return \Toolkit\Sys\Exec::auto($command, $returnStatus, $cwd);
     }
@@ -150,7 +150,7 @@ class Sys extends SysEnv
      *
      * @return array|boolean An array of ($width, $height) or false when it was not able to determine size.
      */
-    public static function getScreenSize(bool $refresh = false)
+    public static function getScreenSize(bool $refresh = false): bool|array
     {
         return ShellUtil::getScreenSize($refresh);
     }
@@ -160,7 +160,7 @@ class Sys extends SysEnv
      *
      * @return int|string
      */
-    public static function getCpuUsage(string $program)
+    public static function getCpuUsage(string $program): int|string
     {
         if (!$program) {
             return -1;
@@ -174,7 +174,7 @@ class Sys extends SysEnv
      *
      * @return int|string
      */
-    public static function getMemUsage(string $program)
+    public static function getMemUsage(string $program): int|string
     {
         if (!$program) {
             return -1;

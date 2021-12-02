@@ -10,6 +10,7 @@
 namespace Toolkit\Sys\Proc;
 
 use Closure;
+use JetBrains\PhpStorm\NoReturn;
 use RuntimeException;
 use Toolkit\Stdlib\OS;
 use function array_merge;
@@ -52,7 +53,7 @@ class ProcessUtil
     /**
      * @var array
      */
-    public static $signalMap = [
+    public static array $signalMap = [
         Signal::INT  => 'SIGINT(Ctrl+C)',
         Signal::TERM => 'SIGTERM',
         Signal::KILL => 'SIGKILL',
@@ -106,12 +107,12 @@ class ProcessUtil
      *
      * @param callable|null $onStart Will running on the child process start.
      * @param callable|null $onError
-     * @param int           $id      The process index number. will use `forks()`
+     * @param int $id      The process index number. will use `forks()`
      *
      * @return array|false
      * @throws RuntimeException
      */
-    public static function fork(callable $onStart = null, callable $onError = null, $id = 0)
+    public static function fork(callable $onStart = null, callable $onError = null, int $id = 0): bool|array
     {
         if (!self::hasPcntl()) {
             return false;
@@ -147,12 +148,12 @@ class ProcessUtil
     /**
      * @param callable|null $onStart
      * @param callable|null $onError
-     * @param int           $id
+     * @param int $id
      *
      * @return array|false
      * @see ProcessUtil::fork()
      */
-    public static function create(callable $onStart = null, callable $onError = null, $id = 0)
+    public static function create(callable $onStart = null, callable $onError = null, int $id = 0): bool|array
     {
         return self::fork($onStart, $onError, $id);
     }
@@ -206,7 +207,7 @@ class ProcessUtil
      * @throws RuntimeException
      * @see ProcessUtil::forks()
      */
-    public static function multi(int $number, callable $onStart = null, callable $onError = null)
+    public static function multi(int $number, callable $onStart = null, callable $onError = null): bool|array
     {
         return self::forks($number, $onStart, $onError);
     }
@@ -221,7 +222,7 @@ class ProcessUtil
      * @return array|false
      * @throws RuntimeException
      */
-    public static function forks(int $number, callable $onStart = null, callable $onError = null)
+    public static function forks(int $number, callable $onStart = null, callable $onError = null): bool|array
     {
         if ($number <= 0) {
             return false;
@@ -254,7 +255,7 @@ class ProcessUtil
             return false;
         }
 
-        $status = null;
+        $status = 0;
 
         // pid < 0：子进程都没了
         // pid > 0：捕获到一个子进程退出的情况
@@ -357,7 +358,7 @@ class ProcessUtil
     public static function killAndWait(
         int $pid,
         &$error = null,
-        $name = 'process',
+        string $name = 'process',
         bool $force = false,
         int $waitTime = 10
     ): bool {
@@ -415,15 +416,16 @@ class ProcessUtil
      *
      * @param int $code
      */
-    public static function quit($code = 0): void
+    #[NoReturn]
+    public static function quit(int $code = 0): void
     {
-        exit((int)$code);
+        exit($code);
     }
 
     /**
      * 杀死所有进程
      *
-     * @param     $name
+     * @param string $name
      * @param int $sigNo
      *
      * @return string
@@ -471,7 +473,7 @@ class ProcessUtil
         // retry stop if not stopped.
         while (true) {
             // success
-            if (!$isRunning = @posix_kill($pid, 0)) {
+            if (!@posix_kill($pid, 0)) {
                 break;
             }
 
@@ -491,12 +493,12 @@ class ProcessUtil
     /**
      * install signal
      *
-     * @param int      $signal e.g: SIGTERM SIGINT(Ctrl+C) SIGUSR1 SIGUSR2 SIGHUP
+     * @param int $signal e.g: SIGTERM SIGINT(Ctrl+C) SIGUSR1 SIGUSR2 SIGHUP
      * @param callable $handler
      *
      * @return bool
      */
-    public static function installSignal($signal, callable $handler): bool
+    public static function installSignal(int $signal, callable $handler): bool
     {
         if (!self::hasPcntl()) {
             return false;
@@ -525,10 +527,10 @@ class ProcessUtil
      *
      * @param int $signal
      *
-     * @return bool|string|mixed
+     * @return mixed
      * @since 7.1
      */
-    public static function getSignalHandler(int $signal)
+    public static function getSignalHandler(int $signal): mixed
     {
         return pcntl_signal_get_handler($signal);
     }
@@ -616,7 +618,7 @@ class ProcessUtil
      *
      * @return bool|int
      */
-    public static function afterDo(int $seconds, callable $handler)
+    public static function afterDo(int $seconds, callable $handler): bool|int
     {
         if (!self::hasPcntl()) {
             return false;
@@ -686,7 +688,7 @@ class ProcessUtil
         $uInfo = posix_getpwnam($user);
 
         if (!$uInfo || !isset($uInfo['uid'])) {
-            throw new RuntimeException("User ({$user}) not found.");
+            throw new RuntimeException("User ($user) not found.");
         }
 
         $uid = (int)$uInfo['uid'];
@@ -694,7 +696,7 @@ class ProcessUtil
         // Get gid.
         if ($group) {
             if (!$gInfo = posix_getgrnam($group)) {
-                throw new RuntimeException("Group {$group} not exists", -300);
+                throw new RuntimeException("Group $group not exists", -300);
             }
 
             $gid = (int)$gInfo['gid'];
@@ -703,19 +705,17 @@ class ProcessUtil
         }
 
         if (!posix_initgroups($uInfo['name'], $gid)) {
-            throw new RuntimeException("The user [{$user}] is not in the user group ID [GID:{$gid}]", -300);
+            throw new RuntimeException("The user [$user] is not in the user group ID [GID:$gid]", -300);
         }
 
         posix_setgid($gid);
-
         if (posix_geteuid() !== $gid) {
-            throw new RuntimeException("Unable to change group to {$user} (UID: {$gid}).", -300);
+            throw new RuntimeException("Unable to change group to $user (UID: $gid).", -300);
         }
 
         posix_setuid($uid);
-
         if (posix_geteuid() !== $uid) {
-            throw new RuntimeException("Unable to change user to {$user} (UID: {$uid}).", -300);
+            throw new RuntimeException("Unable to change user to $user (UID: $uid).", -300);
         }
     }
 

@@ -186,7 +186,7 @@ trait PhpEnvTrait
      * @return bool
      * @throws RuntimeException
      */
-    public static function extIsLoaded(string $name, $throwException = false): bool
+    public static function extIsLoaded(string $name, bool $throwException): bool
     {
         $result = extension_loaded($name);
 
@@ -204,7 +204,7 @@ trait PhpEnvTrait
      *
      * @return array|bool
      */
-    public static function checkExtList(array $extensions = [])
+    public static function checkExtList(array $extensions = []): bool|array
     {
         $allTotal = [];
 
@@ -226,7 +226,7 @@ trait PhpEnvTrait
      *
      * @return array
      */
-    public static function getLoadedExtension($zend_extensions = false): array
+    public static function getLoadedExtension(bool $zend_extensions): array
     {
         return get_loaded_extensions($zend_extensions);
     }
