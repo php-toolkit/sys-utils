@@ -6,7 +6,7 @@ use Toolkit\Stdlib\Helper\Assert;
 use Toolkit\Stdlib\Obj\Traits\AutoConfigTrait;
 
 /**
- * class ProcManager
+ * class ProcManager - TIP: not available
  *
  * @author inhere
  */
