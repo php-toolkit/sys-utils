@@ -10,10 +10,13 @@
 namespace Toolkit\Sys\Proc;
 
 use RuntimeException;
+use function array_keys;
+use function fclose;
 use function proc_close;
 use function proc_get_status;
 use function proc_open;
 use function proc_terminate;
+use function stream_get_contents;
 
 /**
  * Class ProcFunc
@@ -55,12 +58,45 @@ class ProcFunc
      *
      * @param resource $process
      *
-     * @return array
+     * @return array{command:string,pid:int,running:bool,signaled:bool,stopped:bool,exitcode:int,termsig:int,stopsig:int}
      * @see https://www.php.net/manual/en/function.proc-get-status.php
      */
     public static function getStatus($process): array
     {
         return proc_get_status($process);
+    }
+
+    /**
+     * @param resource $pipe
+     *
+     * @return string
+     */
+    public static function readClosePipe($pipe): string
+    {
+        return self::readPipe($pipe, true);
+    }
+
+    /**
+     * @param resource $pipe
+     * @param bool $close
+     *
+     * @return string
+     */
+    public static function readPipe($pipe, bool $close = false): string
+    {
+        $output = stream_get_contents($pipe);
+        $close && fclose($pipe);
+        return $output;
+    }
+
+    /**
+     * @param array $pipes
+     */
+    public static function closePipes(array $pipes): void
+    {
+        foreach ($pipes as $pipe) {
+            fclose($pipe);
+        }
     }
 
     /**

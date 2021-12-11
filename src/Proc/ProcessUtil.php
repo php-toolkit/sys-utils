@@ -9,9 +9,9 @@
 
 namespace Toolkit\Sys\Proc;
 
-use Closure;
 use JetBrains\PhpStorm\NoReturn;
 use RuntimeException;
+use Toolkit\Stdlib\Helper\Assert;
 use Toolkit\Stdlib\OS;
 use function array_merge;
 use function cli_set_process_title;
@@ -19,18 +19,9 @@ use function error_get_last;
 use function file_exists;
 use function file_get_contents;
 use function function_exists;
-use function getmypid;
 use function pcntl_alarm;
-use function pcntl_async_signals;
-use function pcntl_fork;
-use function pcntl_signal;
-use function pcntl_signal_dispatch;
-use function pcntl_signal_get_handler;
-use function pcntl_waitpid;
-use function pcntl_wexitstatus;
 use function posix_geteuid;
 use function posix_getgrnam;
-use function posix_getpid;
 use function posix_getpwnam;
 use function posix_getpwuid;
 use function posix_getuid;
@@ -48,7 +39,7 @@ use const PHP_OS;
  *
  * @package Toolkit\Sys\Proc
  */
-class ProcessUtil
+class ProcessUtil extends PcntlFunc
 {
     /**
      * @var array
@@ -61,22 +52,42 @@ class ProcessUtil
     ];
 
     /**
+     * whether TTY is supported on the current operating system.
+     *
+     * @var bool|null
+     */
+    private static ?bool $ttySupported = null;
+
+    /**
      * Returns whether TTY is supported on the current operating system.
      */
     public static function isTtySupported(): bool
     {
-        static $isTtySupported;
-
-        if (null === $isTtySupported) {
-            $isTtySupported = (bool)@proc_open('echo 1 >/dev/null', [
+        if (null === self::$ttySupported) {
+            $proc = @proc_open('echo 1 >/dev/null', [
                 ['file', '/dev/tty', 'r'],
                 ['file', '/dev/tty', 'w'],
                 ['file', '/dev/tty', 'w']
             ], $pipes);
+
+            if ($proc) {
+                self::$ttySupported = true;
+                ProcFunc::closePipes($pipes);
+                ProcFunc::close($proc);
+            } else {
+                self::$ttySupported = false;
+            }
         }
 
-        return $isTtySupported;
+        return self::$ttySupported;
     }
+
+    /**
+     * whether PTY is supported on the current operating system.
+     *
+     * @var bool|null
+     */
+    private static ?bool $ptySupported = null;
 
     /**
      * Returns whether PTY is supported on the current operating system.
@@ -85,240 +96,23 @@ class ProcessUtil
      */
     public static function isPtySupported(): bool
     {
-        static $result;
-
-        if (null !== $result) {
-            return $result;
-        }
-
         if ('\\' === DIRECTORY_SEPARATOR) {
-            return $result = false;
+            return self::$ptySupported = false;
         }
 
-        return $result = (bool)@proc_open('echo 1 >/dev/null', [['pty'], ['pty'], ['pty']], $pipes);
-    }
+        if (null === self::$ptySupported) {
+            $proc = @proc_open('echo 1 >/dev/null', [['pty'], ['pty'], ['pty']], $pipes);
 
-    /**********************************************************************
-     * create child process `pcntl`
-     *********************************************************************/
-
-    /**
-     * fork/create a child process.
-     *
-     * @param null|callable(int, int):void $onStart Will running on the child process start.
-     * @param null|callable(int):void $onError
-     * @param int $id      The process index number. will use `forks()`
-     *
-     * @return array{id: int, pid: int, startTime: int}
-     * @throws RuntimeException
-     */
-    public static function fork(callable $onStart = null, callable $onError = null, int $id = 0): array
-    {
-        if (!self::hasPcntl()) {
-            return [];
-        }
-
-        $info = [];
-        $pid  = pcntl_fork();
-
-        // at parent, get forked child info
-        if ($pid > 0) {
-            $info = [
-                'id'        => $id,
-                'pid'       => $pid,
-                'startTime' => time(),
-            ];
-        } elseif ($pid === 0) { // at child
-            $pid = self::getPid();
-
-            if ($onStart) {
-                $onStart($pid, $id);
-            }
-        } else {
-            if ($onError) {
-                $onError($pid);
-            }
-
-            throw new RuntimeException('Fork child process failed! exiting.');
-        }
-
-        return $info;
-    }
-
-    /**
-     * @param callable|null $onStart
-     * @param callable|null $onError
-     * @param int $id
-     *
-     * @return array|false
-     * @see ProcessUtil::fork()
-     */
-    public static function create(callable $onStart = null, callable $onError = null, int $id = 0): bool|array
-    {
-        return self::fork($onStart, $onError, $id);
-    }
-
-    /**
-     * Daemon, detach and run in the background
-     *
-     * @param Closure|null $beforeQuit
-     *
-     * @return int Return new process PID
-     * @throws RuntimeException
-     */
-    public static function daemonRun(Closure $beforeQuit = null): int
-    {
-        if (!self::hasPcntl()) {
-            return 0;
-        }
-
-        // umask(0);
-        $pid = pcntl_fork();
-
-        switch ($pid) {
-            case 0: // at new process
-                $pid = self::getPid();
-                if (posix_setsid() < 0) {
-                    throw new RuntimeException('posix_setsid() execute failed! exiting');
-                }
-
-                // chdir('/');
-                // umask(0);
-                break;
-            case -1: // fork failed.
-                throw new RuntimeException('Fork new process is failed! exiting');
-            default: // at parent
-                if ($beforeQuit) {
-                    $beforeQuit($pid);
-                }
-                exit(0);
-        }
-
-        return $pid;
-    }
-
-    /**
-     * @param int           $number
-     * @param callable|null $onStart
-     * @param callable|null $onError
-     *
-     * @return array|false
-     * @throws RuntimeException
-     * @see ProcessUtil::forks()
-     */
-    public static function multi(int $number, callable $onStart = null, callable $onError = null): bool|array
-    {
-        return self::forks($number, $onStart, $onError);
-    }
-
-    /**
-     * fork/create multi child processes.
-     *
-     * @param int           $number
-     * @param callable|null $onStart Will running on the child processes.
-     * @param callable|null $onError
-     *
-     * @return array<int, array{id: int, pid: int, startTime: int}>
-     * @throws RuntimeException
-     */
-    public static function forks(int $number, callable $onStart = null, callable $onError = null): array
-    {
-        if ($number <= 0 || !self::hasPcntl()) {
-            return [];
-        }
-
-        $pidAry = [];
-        for ($id = 0; $id < $number; $id++) {
-            $info = self::fork($onStart, $onError, $id);
-            // log
-            $pidAry[$info['pid']] = $info;
-        }
-
-        return $pidAry;
-    }
-
-    /**
-     * wait child exit.
-     *
-     * @param callable $onExit Exit callback. will received args: (pid, exitCode, status)
-     *
-     * @return bool
-     */
-    public static function wait(callable $onExit): bool
-    {
-        if (!self::hasPcntl()) {
-            return false;
-        }
-
-        $status = 0;
-
-        // pid < 0：子进程都没了
-        // pid > 0：捕获到一个子进程退出的情况
-        // pid = 0：没有捕获到退出的子进程
-        while (($pid = pcntl_waitpid(-1, $status, WNOHANG)) >= 0) {
-            if ($pid) {
-                // handler(pid, exitCode, status)
-                $onExit($pid, pcntl_wexitstatus($status), $status);
+            if ($proc) {
+                self::$ptySupported = true;
+                ProcFunc::closePipes($pipes);
+                ProcFunc::close($proc);
             } else {
-                usleep(50000);
+                self::$ptySupported = false;
             }
         }
 
-        return true;
-    }
-
-    /**
-     * Stops all running children
-     *
-     * @param array $children
-     *      [
-     *      'pid' => [
-     *      'id' => worker id
-     *      ],
-     *      ... ...
-     *      ]
-     * @param int   $signal
-     * @param array $events
-     *      [
-     *      'beforeStops' => function ($sigText) {
-     *      echo "Stopping processes({$sigText}) ...\n";
-     *      },
-     *      'beforeStop' => function ($pid, $info) {
-     *      echo "Stopping process(PID:$pid)\n";
-     *      }
-     *      ]
-     *
-     * @return bool
-     */
-    public static function stopWorkers(array $children, int $signal = Signal::TERM, array $events = []): bool
-    {
-        if (!$children) {
-            return false;
-        }
-
-        if (!self::hasPcntl()) {
-            return false;
-        }
-
-        $events = array_merge([
-            'beforeStops' => null,
-            'beforeStop'  => null,
-        ], $events);
-
-        if ($cb = $events['beforeStops']) {
-            $cb($signal, self::$signalMap[$signal]);
-        }
-
-        foreach ($children as $pid => $child) {
-            if ($cb = $events['beforeStop']) {
-                $cb($pid, $child);
-            }
-
-            // send exit signal.
-            self::sendSignal($pid, $signal);
-        }
-
-        return true;
+        return self::$ptySupported;
     }
 
     /**************************************************************************************
@@ -328,9 +122,9 @@ class ProcessUtil
     /**
      * send kill signal to the process
      *
-     * @param int  $pid
+     * @param int $pid
      * @param bool $force
-     * @param int  $timeout
+     * @param int $timeout
      *
      * @return bool
      */
@@ -342,10 +136,10 @@ class ProcessUtil
     /**
      * Do shutdown process and wait it exit.
      *
-     * @param int    $pid Master Pid
-     * @param bool   $force
-     * @param int    $waitTime
-     * @param null   $error
+     * @param int $pid Master Pid
+     * @param bool $force
+     * @param int $waitTime
+     * @param null $error
      * @param string $name
      *
      * @return bool
@@ -360,14 +154,12 @@ class ProcessUtil
         // do stop
         if (!self::kill($pid, $force)) {
             $error = "Send stop signal to the $name(PID:$pid) failed!";
-
             return false;
         }
 
         // not wait, only send signal
         if ($waitTime <= 0) {
             $error = "The $name process stopped";
-
             return true;
         }
 
@@ -389,8 +181,64 @@ class ProcessUtil
             sleep(1);
         }
 
-        if ($error) {
+        return $error === null;
+    }
+
+    /**
+     * Stops all running children process
+     *
+     * **examples**
+     *
+     * - param `$children` examples:
+     *
+     * ```php
+     * [
+     *  pid1 => [id => 1,],
+     *  pid2 => [id => 2,],
+     * ]
+     * ```
+     *
+     * - param `$events` examples:
+     *
+     * ```php
+     *  [
+     *    'beforeStops' => function ($sigText) {
+     *      echo "Stopping processes({$sigText}) ...\n";
+     *    },
+     *    'beforeStop' => function ($pid, $info) {
+     *      echo "Stopping process(PID:$pid)\n";
+     *    }
+     * ]
+     * ```
+     *
+     * @param array<int, array{id:int, pid:int}> $children
+     * @param int $signal
+     * @param array{beforeStops: callable(string):void, beforeStop: callable(int,array):void} $events
+     *
+     * @return bool
+     */
+    public static function stopWorkers(array $children, int $signal = Signal::TERM, array $events = []): bool
+    {
+        if (!$children) {
             return false;
+        }
+
+        $events = array_merge([
+            'beforeStops' => null,
+            'beforeStop'  => null,
+        ], $events);
+
+        if ($cb = $events['beforeStops']) {
+            $cb($signal, self::$signalMap[$signal]);
+        }
+
+        foreach ($children as $pid => $child) {
+            if ($cb = $events['beforeStop']) {
+                $cb($pid, $child);
+            }
+
+            // send exit signal.
+            self::sendSignal($pid, $signal);
         }
 
         return true;
@@ -427,7 +275,7 @@ class ProcessUtil
      */
     public static function killByName(string $name, int $sigNo = 9): string
     {
-        $cmd = 'ps -eaf |grep "' . $name . '" | grep -v "grep"| awk "{print $2}"|xargs kill -' . $sigNo;
+        $cmd = 'ps -eaf |grep "' . $name . '" | grep -v "grep"| awk "{print $2}" | xargs kill -' . $sigNo;
 
         return exec($cmd);
     }
@@ -447,18 +295,16 @@ class ProcessUtil
      */
     public static function sendSignal(int $pid, int $signal, int $timeout = 0): bool
     {
-        if ($pid <= 0 || !self::hasPosix()) {
+        Assert::intShouldGt0($pid, 'pid', true);
+        Assert::intShouldGte0($timeout, 'timeout', true);
+
+        if (!self::hasPosix()) {
             return false;
         }
 
         // do send
         if ($ret = posix_kill($pid, $signal)) {
             return true;
-        }
-
-        // don't want retry
-        if ($timeout <= 0) {
-            return $ret;
         }
 
         // failed, try again ...
@@ -468,7 +314,7 @@ class ProcessUtil
         // retry stop if not stopped.
         while (true) {
             // success
-            if (!@posix_kill($pid, 0)) {
+            if (!posix_kill($pid, 0)) {
                 break;
             }
 
@@ -486,63 +332,18 @@ class ProcessUtil
     }
 
     /**
-     * install signal
-     *
-     * @param int $signal e.g: SIGTERM SIGINT(Ctrl+C) SIGUSR1 SIGUSR2 SIGHUP
-     * @param callable $handler
-     *
-     * @return bool
-     */
-    public static function installSignal(int $signal, callable $handler): bool
-    {
-        if (!self::hasPcntl()) {
-            return false;
-        }
-
-        return pcntl_signal($signal, $handler, false);
-    }
-
-    /**
-     * dispatch signal
-     *
-     * @return bool
-     */
-    public static function dispatchSignal(): bool
-    {
-        if (!self::hasPcntl()) {
-            return false;
-        }
-
-        // receive and dispatch signal
-        return pcntl_signal_dispatch();
-    }
-
-    /**
-     * get signal handler
-     *
+     * @param int $pid
      * @param int $signal
      *
-     * @return mixed
-     * @since 7.1
-     */
-    public static function getSignalHandler(int $signal): mixed
-    {
-        return pcntl_signal_get_handler($signal);
-    }
-
-    /**
-     * Enable/disable asynchronous signal handling or return the old setting
-     *
-     * @param bool|null $on
-     *  - bool Enable or disable.
-     *  - null Return old setting.
-     *
      * @return bool
-     * @since 7.1
      */
-    public static function asyncSignal(bool $on = null): bool
+    public static function simpleKill(int $pid, int $signal): bool
     {
-        return pcntl_async_signals($on);
+        if (!self::hasPosix()) {
+            return false;
+        }
+
+        return posix_kill($pid, $signal);
     }
 
     /**************************************************************************************
@@ -550,24 +351,10 @@ class ProcessUtil
      *************************************************************************************/
 
     /**
-     * get current process id
-     *
-     * @return int
-     */
-    public static function getPid(): int
-    {
-        if (function_exists('posix_getpid')) {
-            return posix_getpid();
-        }
-
-        return getmypid();
-    }
-
-    /**
      * get PID by pid File
      *
      * @param string $file
-     * @param bool   $checkLive
+     * @param bool $checkLive
      *
      * @return int
      */
@@ -598,42 +385,32 @@ class ProcessUtil
     }
 
     /**
+     * delay do something.
      *
+     * ```php
      * ProcessUtil::afterDo(300, function () {
      *      static $i = 0;
-     *      echo "#{$i}\talarm\n";
+     *      echo "#{$i} alarm\n";
      *      $i++;
      *      if ($i > 20) {
      *          ProcessUtil::clearAlarm(); // close
      *      }
      *  });
+     * ```
      *
-     * @param int      $seconds
+     * @param int $seconds
      * @param callable $handler
      *
      * @return bool|int
      */
     public static function afterDo(int $seconds, callable $handler): bool|int
     {
-        if (!self::hasPcntl()) {
-            return false;
-        }
-
         self::installSignal(Signal::ALRM, $handler);
-
         return pcntl_alarm($seconds);
     }
 
     /**
-     * @return int
-     */
-    public static function clearAlarm(): int
-    {
-        return pcntl_alarm(-1);
-    }
-
-    /**
-     * Set process title.
+     * Set process title. alias of setTitle()
      *
      * @param string $title
      *
@@ -653,7 +430,11 @@ class ProcessUtil
      */
     public static function setTitle(string $title): bool
     {
-        if (!$title || 'Darwin' === PHP_OS) {
+        if (!$title) {
+            return false;
+        }
+
+        if ('Darwin' === PHP_OS) {
             return false;
         }
 
@@ -681,7 +462,6 @@ class ProcessUtil
     public static function changeScriptOwner(string $user, string $group = ''): void
     {
         $uInfo = posix_getpwnam($user);
-
         if (!$uInfo || !isset($uInfo['uid'])) {
             throw new RuntimeException("User ($user) not found.");
         }
@@ -712,14 +492,6 @@ class ProcessUtil
         if (posix_geteuid() !== $uid) {
             throw new RuntimeException("Unable to change user to $user (UID: $uid).", -300);
         }
-    }
-
-    /**
-     * @return bool
-     */
-    public static function hasPcntl(): bool
-    {
-        return !OS::isWindows() && function_exists('pcntl_fork');
     }
 
     /**
