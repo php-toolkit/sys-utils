@@ -11,22 +11,35 @@ namespace Toolkit\Sys\Proc;
 
 use InvalidArgumentException;
 use RuntimeException;
+use Toolkit\Stdlib\Helper\Assert;
 use function array_keys;
 use function chdir;
 use function fclose;
 use function getcwd;
 use function proc_open;
-use function stream_get_contents;
 use const DIRECTORY_SEPARATOR;
 
 /**
- * Class ProcFuncWrapper
+ * Class ProcWrapper
  *
  * @link    https://www.php.net/manual/en/function.proc-open.php
  * @package Inhere\Kite\Common
  */
 class ProcWrapper
 {
+    public const PIPE_DESCRIPTORS = [
+        0 => ['pipe', 'r'], // stdin - read channel
+        1 => ['pipe', 'w'], // stdout - write channel
+        2 => ['pipe', 'w'], // stdout - error channel
+        3 => ['pipe', 'r'], // stdin - This is the pipe we can feed the password into
+    ];
+
+    public const FILE_DESCRIPTORS = [
+        ['file', '/dev/tty', 'r'],
+        ['file', '/dev/tty', 'w'],
+        ['file', '/dev/tty', 'w']
+    ];
+
     /**
      * @var string
      */
@@ -62,9 +75,16 @@ class ProcWrapper
     private array $options = [];
 
     /**
+     * Process resource by proc_open()
+     *
      * @var resource
      */
     private $process;
+
+    /**
+     * @var bool
+     */
+    private bool $windowsOS;
 
     // --------------- result ---------------
 
@@ -89,9 +109,9 @@ class ProcWrapper
      *
      * @return static
      */
-    public static function new(string $command = '', array $descriptors = []): self
+    public static function new(string $command = '', array $descriptors = []): static
     {
-        return new self($command, $descriptors);
+        return new static($command, $descriptors);
     }
 
     /**
@@ -102,40 +122,7 @@ class ProcWrapper
      */
     public static function runCmd(string $command, string $workDir = ''): array
     {
-        $isWindowsOS = '\\' === DIRECTORY_SEPARATOR;
-        $descriptors = [
-            0 => ['pipe', 'r'], // stdin - read channel
-            1 => ['pipe', 'w'], // stdout - write channel
-            2 => ['pipe', 'w'], // stdout - error channel
-            3 => ['pipe', 'r'], // stdin - This is the pipe we can feed the password into
-        ];
-
-        if ($isWindowsOS) {
-            unset($descriptors[3]);
-        }
-
-        $proc = new ProcWrapper($command, $descriptors);
-        $proc->run($workDir);
-
-        $pipes = $proc->getPipes();
-
-        // Nothing to push to input.
-        fclose($pipes[0]);
-
-        $output = stream_get_contents($pipes[1]);
-        fclose($pipes[1]);
-
-        $error = stream_get_contents($pipes[2]);
-        fclose($pipes[2]);
-
-        if (!$isWindowsOS) {
-            // TODO: Write passphrase in pipes[3].
-            fclose($pipes[3]);
-        }
-
-        // Close all pipes before proc_close! $code === 0 is success.
-        $code = $proc->close();
-        return [$code, $output, $error];
+        return (new self)->exec($command, $workDir);
     }
 
     /**
@@ -144,15 +131,23 @@ class ProcWrapper
      * @param string $workDir
      *
      * @return array
+     */
+    public static function editFile(string $editor, string $filepath = '', string $workDir = ''): array
+    {
+        return static::runEditor($editor, $filepath, $workDir);
+    }
+
+    /**
+     * @param string $editor eg: vim
+     * @param string $filepath
+     * @param string $workDir
+     *
+     * @return array
      * @link https://stackoverflow.com/questions/27064185/open-vim-from-php-like-git?noredirect=1&lq=1
      */
     public static function runEditor(string $editor, string $filepath = '', string $workDir = ''): array
     {
-        $descriptors = [
-            ['file', '/dev/tty', 'r'],
-            ['file', '/dev/tty', 'w'],
-            ['file', '/dev/tty', 'w']
-        ];
+        $descriptors = self::FILE_DESCRIPTORS;
 
         // $process = proc_open("vim $file", $descriptors, $pipes, $workDir);
         // \var_dump(proc_get_status($process));
@@ -169,25 +164,14 @@ class ProcWrapper
             $command .= ' ' . $filepath;
         }
 
-        $proc = new ProcWrapper($command, $descriptors);
+        $proc = self::new($command, $descriptors);
         $proc->run($workDir);
 
+        // $output = $proc->read(1);
+        $proc->closePipes();
         $code = $proc->close();
 
         return [$code];
-    }
-
-    /**
-     * @param $pipe
-     *
-     * @return string
-     */
-    public static function readAndClosePipe($pipe): string
-    {
-        $output = stream_get_contents($pipe);
-        fclose($pipe);
-
-        return $output;
     }
 
     /**
@@ -200,7 +184,43 @@ class ProcWrapper
     {
         $this->command = $command;
 
+        $this->windowsOS   = '\\' === DIRECTORY_SEPARATOR;
         $this->descriptors = $descriptors;
+    }
+
+    /**
+     * Run an command line, return outputs.
+     *
+     * @param string $command
+     * @param string|null $workDir
+     *
+     * @return array{int,string,string}
+     */
+    public function exec(string $command = '', string $workDir = null): array
+    {
+        $descriptors = self::PIPE_DESCRIPTORS;
+        if ($this->windowsOS) {
+            unset($descriptors[3]);
+        }
+
+        $this->setCommand($command)
+            ->setDescriptors($descriptors)
+            ->run($workDir);
+
+        // Nothing to push to input.
+        // fclose($pipes[0]);
+        $this->closePipe(0);
+
+        $output = $this->readClose(1);
+        $error  = $this->readClose(2);
+
+        // TODO: Write passphrase in pipes[3].
+        if (!$this->windowsOS) {
+            $this->closePipe(3);
+        }
+
+        $code = $this->close();
+        return [$code, $output, $error];
     }
 
     /**
@@ -265,21 +285,58 @@ class ProcWrapper
     }
 
     /**
+     * @param int $index
+     *
+     * @return false|string
+     */
+    public function readClose(int $index): false|string
+    {
+        return $this->read($index);
+    }
+
+    /**
      * @param int  $index
      * @param bool $close
      *
      * @return false|string
      */
-    public function read(int $index, bool $close = true): bool|string
+    public function read(int $index, bool $close = false): bool|string
     {
-        $thePipe = $this->getPipe($index);
-        $output  = stream_get_contents($thePipe);
+        $pipe = $this->getPipe($index);
 
-        if ($close) {
-            fclose($thePipe);
+        return ProcFunc::readPipe($pipe, $close);
+    }
+
+    /**
+     * @return int
+     */
+    public function getPid(): int
+    {
+        $info = $this->getStatus();
+        return $info['pid'] ?? 0;
+    }
+
+    /**
+     * get process status
+     *
+     * @return array{command:string,pid:int,running:bool,signaled:bool,stopped:bool,exitcode:int,termsig:int,stopsig:int}
+     */
+    public function getStatus(): array
+    {
+        Assert::notNull($this->process, 'process not start or closed');
+        return ProcFunc::getStatus($this->process);
+    }
+
+    /**
+     * @param int $index
+     *
+     * @return void
+     */
+    public function closePipe(int $index): void
+    {
+        if (isset($this->pipes[$index])) {
+            fclose($this->pipes[$index]);
         }
-
-        return $output;
     }
 
     /**
@@ -302,35 +359,24 @@ class ProcWrapper
     /**
      * @return int
      */
-    public function getPid(): int
+    public function closeAll(): int
     {
-        $info = $this->getStatus();
-
-        return $info['pid'] ?? 0;
+        $this->closePipes();
+        return $this->close();
     }
 
     /**
-     * @return array
-     *  - command  string
-     *  - pid      int
-     *  - running  bool
-     *  - signaled bool
-     *  - stopped  bool
-     *  - exitcode int
-     */
-    public function getStatus(): array
-    {
-        return ProcFunc::getStatus($this->process);
-    }
-
-    /**
-     * @return int
+     * Close process
+     * - Should close all pipes before call close()!
+     *
+     * @return int return === 0 is success.
      */
     public function close(): int
     {
         // Close all pipes before proc_close! $code === 0 is success.
         $this->code = ProcFunc::close($this->process);
 
+        $this->process = null;
         return $this->code;
     }
 

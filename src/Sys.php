@@ -13,7 +13,11 @@ use RuntimeException;
 use Toolkit\Sys\Proc\ProcWrapper;
 use Toolkit\Sys\Util\ShellUtil;
 use function exec;
+use function fgets;
 use function is_file;
+use function is_readable;
+use function pclose;
+use function popen;
 use function preg_match;
 use const DIRECTORY_SEPARATOR;
 
@@ -181,6 +185,50 @@ class Sys extends SysEnv
         }
 
         return exec('ps aux | grep ' . $program . ' | grep -v grep | grep -v su | awk {"print $4"}');
+    }
+
+    private static ?int $cpuNum = null;
+
+    /**
+     * @return int
+     * @refer https://gist.github.com/ezzatron/1321581
+     */
+    public static function getCpuNum(): int
+    {
+        if (self::$cpuNum !== null) {
+            return self::$cpuNum;
+        }
+
+        $cpuNum = 1;
+
+        if (self::isWin()) {
+            $process = @popen('wmic cpu get NumberOfCores', 'rb');
+
+            if (false !== $process) {
+                fgets($process);
+                $cpuNum = (int)fgets($process);
+                pclose($process);
+            } else {
+                $cpuNum = (int)self::getEnvVal('NUMBER_OF_PROCESSORS', '1');
+            }
+        } elseif (is_readable('/proc/cpuinfo')) {
+            $cpuInfo = file_get_contents('/proc/cpuinfo');
+            preg_match_all('/^processor/m', $cpuInfo, $matches);
+            $cpuNum = count($matches[0]);
+        } else {
+            $process = @popen('sysctl -a | grep hw.ncpu', 'rb');
+            if (false !== $process) {
+                // 'hw.ncpu: 8'
+                $line = fgets($process);
+                pclose($process);
+
+                if (1 === preg_match('/hw.ncpu: (\d+)/', $line, $match)) {
+                    $cpuNum = (int)$match[1];
+                }
+            }
+        }
+
+        return self::$cpuNum = $cpuNum;
     }
 
     /**

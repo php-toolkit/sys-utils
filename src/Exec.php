@@ -21,6 +21,7 @@ use function ob_start;
 use function pclose;
 use function popen;
 use function shell_exec;
+use function stream_get_contents;
 use function system;
 use function trim;
 
@@ -36,17 +37,69 @@ class Exec
      * @param string $workDir
      * @param bool   $outAsString
      *
-     * @return array
+     * @return array{int, string|array}
      */
     public static function exec(string $command, string $workDir = '', bool $outAsString = true): array
     {
+        $curDir = '';
         if ($workDir) {
+            $curDir = getcwd();
             chdir($workDir);
         }
 
         exec($command, $output, $status);
 
+        // fix: revert workdir after run end.
+        if ($curDir) {
+            chdir($curDir);
+        }
+
         return [$status, $outAsString ? implode("\n", $output) : $output];
+    }
+
+    /**
+     * Exec an command and get output. use popen()
+     *
+     * @param string $command
+     * @param string $workDir
+     *
+     * @return string
+     */
+    public static function pexec(string $command, string $workDir = ''): string
+    {
+        $output = $curDir = '';
+        if ($workDir) {
+            $curDir = getcwd();
+            chdir($workDir);
+        }
+
+        // popen
+        $proc = popen($command, 'rb');
+        if (false !== $proc) {
+            $output = stream_get_contents($proc);
+            pclose($proc);
+        }
+
+        // fix: revert workdir after run end.
+        if ($curDir) {
+            chdir($curDir);
+        }
+
+        return $output;
+    }
+
+    /**
+     * run a command. it is support windows
+     *
+     * @param string $command
+     * @param string $cwd
+     *
+     * @return array [$code, $output, $error]
+     * @throws RuntimeException
+     */
+    public static function run(string $command, string $cwd = ''): array
+    {
+        return ProcWrapper::runCmd($command, $cwd);
     }
 
     /**
@@ -129,17 +182,16 @@ class Exec
     }
 
     /**
-     * run a command. it is support windows
+     * Quick exec an command and return output
      *
      * @param string $command
      * @param string $cwd
      *
-     * @return array [$code, $output, $error]
-     * @throws RuntimeException
+     * @return string
      */
-    public static function run(string $command, string $cwd = ''): array
+    public static function getOutput(string $command, string $cwd = ''): string
     {
-        return ProcWrapper::runCmd($command, $cwd);
+        return self::auto($command, false, $cwd);
     }
 
     /**
@@ -171,17 +223,25 @@ class Exec
             ob_start();
             system($command, $status);
             $output = ob_get_clean();
-            //exec
+
+            // exec
         } elseif (function_exists('exec')) {
             exec($command, $output, $status);
             $output = implode("\n", $output);
 
-            //shell_exec
+            // shell_exec
         } elseif (function_exists('shell_exec')) {
             $output = shell_exec($command);
         } else {
-            $status = -1;
-            $output = 'Command execution not possible on this system';
+            // popen
+            $proc = popen($command, 'rb');
+            if (false !== $proc) {
+                $status = 0;
+                $output = stream_get_contents($proc);
+            } else {
+                $status = -1;
+                $output = 'Command execution not possible on this system';
+            }
         }
 
         // fix: revert workdir after run end.
@@ -195,7 +255,6 @@ class Exec
                 'status' => $status
             ];
         }
-
         return trim($output);
     }
 
@@ -226,18 +285,5 @@ class Exec
         }
 
         return $dummy;
-    }
-
-    /**
-     * Quick exec an command and return output
-     *
-     * @param string $command
-     * @param string $cwd
-     *
-     * @return string
-     */
-    public static function getOutput(string $command, string $cwd = ''): string
-    {
-        return self::auto($command, false, $cwd);
     }
 }

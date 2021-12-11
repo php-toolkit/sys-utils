@@ -7,7 +7,9 @@
  * @license  MIT
  */
 
+use Toolkit\Sys\Proc\ProcWrapper;
+
 require dirname(__DIR__) . '/test/bootstrap.php';
 
 $editor = 'vim';
-Toolkit\Sys\Proc\ProcWrapper::runEditor($editor, 'test.txt');
+ProcWrapper::runEditor($editor, 'test.txt');

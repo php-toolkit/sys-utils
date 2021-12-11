@@ -7,4 +7,15 @@
  * @license  MIT
  */
 
+use Toolkit\Sys\Proc\ProcWrap;
+
 require dirname(__DIR__) . '/test/bootstrap.php';
+
+// run: php example/proc0.php
+$proc = ProcWrap::new('ls -al')->run();
+
+vdump($proc->getStatus());
+
+$proc->closeAll();
+
+// vdump($proc->getStatus()); // will ex
