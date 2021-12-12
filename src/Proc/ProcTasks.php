@@ -86,7 +86,7 @@ class ProcTasks
     private $workerExitFn;
 
     /**
-     * Hooks on all worker process exited, in parent.
+     * Hooks on completed, all worker process exited, in parent.
      *
      * @var callable(): void
      */
@@ -380,6 +380,19 @@ class ProcTasks
     public function onWorkerExit(callable $listener): self
     {
         $this->workerExitFn = $listener;
+        return $this;
+    }
+
+    /**
+     * On all worker process exited, in parent.
+     *
+     * @param callable $listener
+     *
+     * @return $this
+     */
+    public function onCompleted(callable $listener): self
+    {
+        $this->workersExitedFn = $listener;
         return $this;
     }
 
