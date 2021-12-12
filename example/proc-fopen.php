@@ -7,15 +7,11 @@
  * @license  MIT
  */
 
-use Toolkit\Sys\Proc\ProcWrap;
+use Toolkit\Sys\Exec;
 
 require dirname(__DIR__) . '/test/bootstrap.php';
 
-// run: php example/proc0.php
-$proc = ProcWrap::new('ls -al')->run();
+// run: php example/proc-fopen.php
+$result = Exec::pexec('ls -al');
 
-vdump($proc->getStatus());
-
-$proc->closeAll();
-
-// vdump($proc->getStatus()); // will ex
+vdump($result);

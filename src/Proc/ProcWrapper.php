@@ -27,6 +27,11 @@ use const DIRECTORY_SEPARATOR;
  */
 class ProcWrapper
 {
+    public const PIPE_IN_INDEX   = 0;
+    public const PIPE_OUT_INDEX  = 1;
+    public const PIPE_ERR_INDEX  = 2;
+    public const PIPE_PASS_INDEX = 3;
+
     public const PIPE_DESCRIPTORS = [
         0 => ['pipe', 'r'], // stdin - read channel
         1 => ['pipe', 'w'], // stdout - write channel
@@ -35,8 +40,8 @@ class ProcWrapper
     ];
 
     public const FILE_DESCRIPTORS = [
-        ['file', '/dev/tty', 'r'],
-        ['file', '/dev/tty', 'w'],
+        ['file', '/dev/tty', 'r'], // read channel
+        ['file', '/dev/tty', 'w'], // write channel
         ['file', '/dev/tty', 'w']
     ];
 
@@ -94,16 +99,6 @@ class ProcWrapper
     private int $code = 0;
 
     /**
-     * @var string
-     */
-    private string $error = '';
-
-    /**
-     * @var string
-     */
-    private string $output = '';
-
-    /**
      * @param string $command
      * @param array  $descriptors
      *
@@ -122,7 +117,7 @@ class ProcWrapper
      */
     public static function runCmd(string $command, string $workDir = ''): array
     {
-        return (new self)->exec($command, $workDir);
+        return ProcCmd::quickExec($command, $workDir);
     }
 
     /**
@@ -164,12 +159,10 @@ class ProcWrapper
             $command .= ' ' . $filepath;
         }
 
-        $proc = self::new($command, $descriptors);
-        $proc->run($workDir);
+        $proc = self::new($command, $descriptors)->run($workDir);
 
         // $output = $proc->read(1);
-        $proc->closePipes();
-        $code = $proc->close();
+        $code = $proc->closeAll();
 
         return [$code];
     }
@@ -189,50 +182,15 @@ class ProcWrapper
     }
 
     /**
-     * Run an command line, return outputs.
-     *
-     * @param string $command
-     * @param string|null $workDir
-     *
-     * @return array{int,string,string}
-     */
-    public function exec(string $command = '', string $workDir = null): array
-    {
-        $descriptors = self::PIPE_DESCRIPTORS;
-        if ($this->windowsOS) {
-            unset($descriptors[3]);
-        }
-
-        $this->setCommand($command)
-            ->setDescriptors($descriptors)
-            ->run($workDir);
-
-        // Nothing to push to input.
-        // fclose($pipes[0]);
-        $this->closePipe(0);
-
-        $output = $this->readClose(1);
-        $error  = $this->readClose(2);
-
-        // TODO: Write passphrase in pipes[3].
-        if (!$this->windowsOS) {
-            $this->closePipe(3);
-        }
-
-        $code = $this->close();
-        return [$code, $output, $error];
-    }
-
-    /**
      * Alias of open()
      *
-     * @param string|null $workDir
+     * @param string $workDir
      *
      * @return $this
      */
-    public function run(string $workDir = null): self
+    public function run(string $workDir = ''): static
     {
-        if ($workDir !== null) {
+        if ($workDir) {
             $this->workDir = $workDir;
         }
 
@@ -242,7 +200,7 @@ class ProcWrapper
     /**
      * @return $this
      */
-    public function open(): self
+    public function open(): static
     {
         if (!$command = $this->command) {
             throw new InvalidArgumentException('The want execute command is cannot be empty');
@@ -429,20 +387,25 @@ class ProcWrapper
     }
 
     /**
-     * @return string|null
+     * @return string
      */
-    public function getWorkDir(): ?string
+    public function getWorkDir(): string
     {
         return $this->workDir;
     }
 
     /**
      * @param string $workDir
+     * @param bool   $notEmpty
      *
      * @return ProcWrapper
      */
-    public function setWorkDir(string $workDir): self
+    public function setWorkDir(string $workDir, bool $notEmpty = true): self
     {
+        if ($notEmpty && !$workDir) {
+            return $this;
+        }
+
         $this->workDir = $workDir;
         return $this;
     }
@@ -462,7 +425,10 @@ class ProcWrapper
      */
     public function setCommand(string $command): self
     {
-        $this->command = $command;
+        if ($command) {
+            $this->command = $command;
+        }
+
         return $this;
     }
 
@@ -538,18 +504,10 @@ class ProcWrapper
     }
 
     /**
-     * @return string
+     * @return bool
      */
-    public function getError(): string
+    public function isWindowsOS(): bool
     {
-        return $this->error;
-    }
-
-    /**
-     * @return string
-     */
-    public function getOutput(): string
-    {
-        return $this->output;
+        return $this->windowsOS;
     }
 }

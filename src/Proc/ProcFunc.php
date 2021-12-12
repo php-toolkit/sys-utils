@@ -90,13 +90,21 @@ class ProcFunc
     }
 
     /**
-     * @param array $pipes
+     * @param array<resource> $pipes
      */
     public static function closePipes(array $pipes): void
     {
         foreach ($pipes as $pipe) {
             fclose($pipe);
         }
+    }
+
+    /**
+     * @param resource $pipe Pipe from proc_open()
+     */
+    public static function closePipe($pipe): bool
+    {
+        return fclose($pipe);
     }
 
     /**

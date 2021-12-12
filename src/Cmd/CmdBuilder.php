@@ -73,7 +73,7 @@ class CmdBuilder extends AbstractCmdBuilder
      *
      * @return $this
      */
-    public function add(int|string $arg): self
+    public function add(int|string $arg): static
     {
         $this->args[] = $arg;
         return $this;
@@ -85,7 +85,7 @@ class CmdBuilder extends AbstractCmdBuilder
      *
      * @return $this
      */
-    public function addf(string $format, ...$a): self
+    public function addf(string $format, ...$a): static
     {
         $this->args[] = sprintf($format, ...$a);
         return $this;
@@ -97,7 +97,7 @@ class CmdBuilder extends AbstractCmdBuilder
      *
      * @return $this
      */
-    public function addIf(int|string $arg, bool|int|string $ifExpr): self
+    public function addIf(int|string $arg, bool|int|string $ifExpr): static
     {
         if ($ifExpr) {
             $this->args[] = $arg;
@@ -111,7 +111,7 @@ class CmdBuilder extends AbstractCmdBuilder
      *
      * @return $this
      */
-    public function addArg(int|string $arg): self
+    public function addArg(int|string $arg): static
     {
         $this->args[] = $arg;
         return $this;
@@ -122,7 +122,7 @@ class CmdBuilder extends AbstractCmdBuilder
      *
      * @return $this
      */
-    public function addArgs(...$args): self
+    public function addArgs(...$args): static
     {
         if ($args) {
             $this->args = array_merge($this->args, $args);
@@ -134,9 +134,9 @@ class CmdBuilder extends AbstractCmdBuilder
     /**
      * @param bool $printOutput
      *
-     * @return AbstractCmdBuilder
+     * @return static
      */
-    public function run(bool $printOutput = false): AbstractCmdBuilder
+    public function run(bool $printOutput = false): static
     {
         $this->printOutput = $printOutput;
 
@@ -151,6 +151,10 @@ class CmdBuilder extends AbstractCmdBuilder
      */
     protected function buildCommandLine(): string
     {
+        if ($this->cmdline) {
+            return $this->cmdline;
+        }
+
         $argList = [];
         foreach ($this->args as $arg) {
             $argList[] = Str::shellQuote((string)$arg);
@@ -165,7 +169,7 @@ class CmdBuilder extends AbstractCmdBuilder
      *
      * @return CmdBuilder
      */
-    public function setBin(string $bin): self
+    public function setBin(string $bin): static
     {
         $this->bin = $bin;
         return $this;
@@ -176,7 +180,7 @@ class CmdBuilder extends AbstractCmdBuilder
      *
      * @return CmdBuilder
      */
-    public function setArgs(array $args): self
+    public function setArgs(array $args): static
     {
         $this->args = $args;
         return $this;

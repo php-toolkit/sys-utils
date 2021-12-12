@@ -196,19 +196,21 @@ class Exec
 
     /**
      * Method to execute a command in the sys
-     * Uses :
+     *
+     * Will try uses :
      * 1. system
-     * X. passthru - will report error on windows
+     * 2. passthru - will report error on windows
      * 3. exec
      * 4. shell_exec
+     * 5. popen
      *
      * @param string $command
-     * @param bool $returnStatus
+     * @param bool   $getStatus
      * @param string $cwd
      *
-     * @return array|string
+     * @return string|array{status:int, output:string}
      */
-    public static function auto(string $command, bool $returnStatus = true, string $cwd = ''): array|string
+    public static function auto(string $command, bool $getStatus = true, string $cwd = ''): array|string
     {
         $status = 1;
         $curDir = '';
@@ -249,7 +251,7 @@ class Exec
             chdir($curDir);
         }
 
-        if ($returnStatus) {
+        if ($getStatus) {
             return [
                 'output' => trim($output),
                 'status' => $status

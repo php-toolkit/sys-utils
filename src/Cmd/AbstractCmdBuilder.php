@@ -25,7 +25,7 @@ abstract class AbstractCmdBuilder
     /**
      * @var string
      */
-    protected string $command = '';
+    protected string $cmdline = '';
 
     /**
      * @var string
@@ -79,7 +79,7 @@ abstract class AbstractCmdBuilder
      */
     public function __construct(string $command = '', string $workDir = '')
     {
-        $this->command = $command;
+        $this->cmdline = $command;
         $this->workDir = $workDir;
     }
 
@@ -88,7 +88,7 @@ abstract class AbstractCmdBuilder
      *
      * @return $this
      */
-    public function chDir(string $workDir): self
+    public function chDir(string $workDir): static
     {
         return $this->changeDir($workDir);
     }
@@ -98,7 +98,7 @@ abstract class AbstractCmdBuilder
      *
      * @return $this
      */
-    public function changeDir(string $workDir): self
+    public function changeDir(string $workDir): static
     {
         $this->workDir = $workDir;
         return $this;
@@ -119,7 +119,7 @@ abstract class AbstractCmdBuilder
      *
      * @return $this
      */
-    abstract public function run(bool $printOutput = false): self;
+    abstract public function run(bool $printOutput = false): static;
 
     /**************************************************************************
      * helper methods
@@ -206,22 +206,22 @@ abstract class AbstractCmdBuilder
      *************************************************************************/
 
     /**
-     * @param string $command
+     * @param string $cmdline
      *
      * @return $this
      */
-    public function setCommand(string $command): self
+    public function setCmdline(string $cmdline): static
     {
-        $this->command = $command;
+        $this->cmdline = $cmdline;
         return $this;
     }
 
     /**
      * @return string
      */
-    public function getCommand(): string
+    public function getCmdline(): string
     {
-        return $this->command;
+        return $this->cmdline;
     }
 
     /**
@@ -237,7 +237,7 @@ abstract class AbstractCmdBuilder
      *
      * @return $this
      */
-    public function setWorkDir(string $workDir): self
+    public function setWorkDir(string $workDir): static
     {
         $this->workDir = $workDir;
         return $this;
@@ -293,7 +293,7 @@ abstract class AbstractCmdBuilder
      *
      * @return $this
      */
-    public function setPrintCmd(bool $printCmd): self
+    public function setPrintCmd(bool $printCmd): static
     {
         $this->printCmd = $printCmd;
         return $this;
@@ -304,7 +304,7 @@ abstract class AbstractCmdBuilder
      *
      * @return $this
      */
-    public function setPrintOutput(bool $printOutput): self
+    public function setPrintOutput(bool $printOutput): static
     {
         $this->printOutput = $printOutput;
         return $this;
@@ -323,7 +323,7 @@ abstract class AbstractCmdBuilder
      *
      * @return $this
      */
-    public function setIgnoreError(bool $ignoreError): self
+    public function setIgnoreError(bool $ignoreError): static
     {
         $this->ignoreError = $ignoreError;
         return $this;
@@ -334,7 +334,7 @@ abstract class AbstractCmdBuilder
      *
      * @return $this
      */
-    public function setDryRun(bool $dryRun): self
+    public function setDryRun(bool $dryRun): static
     {
         $this->dryRun = $dryRun;
         return $this;
