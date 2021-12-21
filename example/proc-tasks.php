@@ -7,6 +7,7 @@ require dirname(__DIR__) . '/test/bootstrap.php';
 // run: php example/proc-tasks.php
 // ProcTasks::new() // will auto get cpu num as proc num
 ProcTasks::new(['procNum' => 3])
+    ->setProcName("procTasks")
     ->setTaskHandler(function (array $task, array $ctx) {
         $pid = $ctx['pid'];
         println("worker#{$ctx['id']} [PID:$pid] - handle task, task data", $task);
@@ -16,7 +17,7 @@ ProcTasks::new(['procNum' => 3])
     ->onWorkersCreated(fn($pid, $info) => println("master [PID:$pid] - All task process started,", 'Workers info', $info))
     ->onWorkerStart(fn($pid, $id) => println("worker#$id started, pid is", $pid))
     ->onWorkerExit(fn($pid, $id) => println("worker#$id exited, pid is", $pid))
-    ->onWorkersExited(fn($pid) => println("master [PID:$pid] - all workers exited, tasks run completed"))
+    ->onCompleted(fn($pid) => println("master [PID:$pid] - all workers exited, tasks run completed"))
     ->setTasks([
         ['task1'], // one task
         ['task2'],

@@ -2,13 +2,16 @@
 
 namespace Toolkit\Sys\Proc;
 
+use Exception;
 use JetBrains\PhpStorm\NoReturn;
+use Throwable;
 use Toolkit\Stdlib\Helper\Assert;
 use Toolkit\Stdlib\Num;
 use Toolkit\Stdlib\Obj\Traits\AutoConfigTrait;
 use Toolkit\Sys\Sys;
 use function array_chunk;
 use function count;
+use function println;
 use function time;
 
 /**
@@ -40,12 +43,14 @@ class ProcTasks
     private $taskHandler;
 
     /**
-     * hooks on error
-     * - param#1 is PID.
+     * hooks on run task error.
+     * - param#1 is Exception.
+     * - param#2 is PID.
+     * - return bool. TRUE - stop handle task, FALSE - continue handle next.
      *
-     * @var callable(int): void
+     * @var callable(Exception, int): bool
      */
-    private $onError;
+    private $errorHandler;
 
     /**
      * hooks on before create workers, in parent.
@@ -297,11 +302,36 @@ class ProcTasks
         // exec task handler
         $handler = $this->taskHandler;
         foreach ($tasks as $task) {
-            $handler($task, $info);
+            try {
+                $handler($task, $info);
+            } catch (Throwable $e) {
+                if ($this->handleTaskError($e, $pid)) {
+                    break;
+                }
+            }
         }
 
         // exit worker
         exit(0);
+    }
+
+    /**
+     * @param Throwable $e
+     * @param int $pid
+     *
+     * @return bool TRUE - stop continue handle. FALSE - continue next.
+     */
+    protected function handleTaskError(Throwable $e, int $pid): bool
+    {
+        // call hooks
+        if ($fn = $this->errorHandler) {
+            $stop = $fn($e, $pid);
+
+            return (bool)$stop;
+        }
+
+        println("[PID:$pid] ERROR: handle task -", $e->getMessage());
+        return false;
     }
 
     /**
@@ -328,7 +358,6 @@ class ProcTasks
 
             $fn($pid, $info['id'], $info);
         }
-
     }
 
     /**
@@ -384,6 +413,19 @@ class ProcTasks
     }
 
     /**
+     * On run task error
+     *
+     * @param callable(Exception, int): void $errorHandler
+     *
+     * @return ProcTasks
+     */
+    public function onTaskError(callable $errorHandler): self
+    {
+        $this->errorHandler = $errorHandler;
+        return $this;
+    }
+
+    /**
      * On all worker process exited, in parent.
      *
      * @param callable $listener
@@ -397,24 +439,19 @@ class ProcTasks
     }
 
     /**
-     * On all worker process exited, in parent.
-     *
-     * @param callable $listener
-     *
-     * @return $this
-     */
-    public function onWorkersExited(callable $listener): self
-    {
-        $this->workersExitedFn = $listener;
-        return $this;
-    }
-
-    /**
      * @return int
      */
     public function getProcNum(): int
     {
         return $this->procNum;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTaskNum(): int
+    {
+        return count($this->tasks);
     }
 
     /**
@@ -468,21 +505,18 @@ class ProcTasks
     }
 
     /**
-     * @param callable $onError
-     *
-     * @return ProcTasks
-     */
-    public function setOnError(callable $onError): self
-    {
-        $this->onError = $onError;
-        return $this;
-    }
-
-    /**
      * @return array
      */
     public function getProcesses(): array
     {
         return $this->processes;
+    }
+
+    /**
+     * @return int
+     */
+    public function getMasterPid(): int
+    {
+        return $this->masterPid;
     }
 }

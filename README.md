@@ -37,7 +37,7 @@ ProcTasks::new(['procNum' => 2])
     ->onWorkersCreated(fn($pid, $info) => println("master [PID:$pid] - All task process started,", 'Workers info', $info))
     ->onWorkerStart(fn($pid, $id) => println("worker#$id started, pid is", $pid))
     ->onWorkerExit(fn($pid, $id) => println("worker#$id exited, pid is", $pid))
-    ->onWorkersExited(fn($pid) => println("master [PID:$pid] - all workers exited, tasks run completed"))
+    ->onCompleted(fn($pid) => println("master [PID:$pid] - all workers exited, tasks run completed"))
     ->setTasks([
         ['task1'], // one task
         ['task2'],
