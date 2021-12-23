@@ -108,9 +108,9 @@ abstract class AbstractCmdBuilder
     /**
      * run and print all output
      */
-    public function runAndPrint(): void
+    public function runAndPrint(): static
     {
-        $this->run(true);
+        return $this->run(true);
     }
 
     /**
