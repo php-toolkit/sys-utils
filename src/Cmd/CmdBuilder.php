@@ -132,6 +132,29 @@ class CmdBuilder extends AbstractCmdBuilder
     }
 
     /**
+     * Call fn on args is not empty.
+     *
+     * Usage:
+     *
+     * ```php
+     * $c->withIf(fn($args) => $c->addArgs(...$args), $args)
+     * ```
+     *
+     * @template T
+     * @param callable(T): void $fn
+     * @param T $args
+     *
+     * @return $this
+     */
+    public function withIf(callable $fn, mixed $args): static
+    {
+        if ($args) {
+            $fn($this);
+        }
+        return $this;
+    }
+
+    /**
      * @param bool $printOutput
      *
      * @return static

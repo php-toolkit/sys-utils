@@ -240,7 +240,10 @@ abstract class AbstractCmdBuilder
      */
     public function setWorkDir(string $workDir): static
     {
-        Assert::isDir($workDir, "workdir is not exists. path: $workDir");
+        if ($workDir) {
+            Assert::isDir($workDir, "workdir is not exists. path: $workDir");
+        }
+
         $this->workDir = $workDir;
         return $this;
     }
