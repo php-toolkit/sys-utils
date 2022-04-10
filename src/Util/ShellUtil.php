@@ -120,7 +120,7 @@ class ShellUtil
                     $matches
                 )
             ) {
-                return ($size = [$matches[2], $matches[1]]);
+                return ($size = [(int)$matches[2], (int)$matches[1]]);
             }
 
             // fallback to tput, which may not be updated on terminal resize
