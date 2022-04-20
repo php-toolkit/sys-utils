@@ -183,11 +183,11 @@ abstract class AbstractCmdBuilder
         [$exitCode, $lastLine] = Exec::system($command, $workDir);
 
         $this->code   = $exitCode;
-        $this->output = trim($lastLine);
+        $this->output = $msg = trim($lastLine);
 
         if ($exitCode !== 0) {
             $this->error = $this->output;
-            $this->printMessage("error code $exitCode:\n" . $lastLine, self::PRINT_ERROR);
+            $this->printMessage("error: exit code $exitCode" . ($msg ? "\n  $msg" : ''), self::PRINT_ERROR);
         } else {
             echo "\n";
         }
