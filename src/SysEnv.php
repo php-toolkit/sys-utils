@@ -80,7 +80,7 @@ class SysEnv extends OS
      */
     public static function getEnvPaths(): array
     {
-        $pathStr = $_SERVER['PATH'] ?? '';
+        $pathStr = $_SERVER['PATH'] ?? ($_SERVER['Path'] ?? '');
         if (!$pathStr) {
             return [];
         }

@@ -248,12 +248,18 @@ class Sys extends SysEnv
      */
     public static function findExecutable(string $name, array $paths = []): string
     {
+        $isWin = self::isWindows();
         $paths = $paths ?: self::getEnvPaths();
 
         foreach ($paths as $path) {
             $filename = $path . DIRECTORY_SEPARATOR . $name;
             if (is_file($filename)) {
                 return $filename;
+            }
+
+            // maybe is exe file
+            if ($isWin && is_file($filename . '.exe')) {
+                return $filename . '.exe';
             }
         }
         return "";
