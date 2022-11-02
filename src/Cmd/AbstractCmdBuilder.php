@@ -11,6 +11,7 @@ namespace Toolkit\Sys\Cmd;
 
 use RuntimeException;
 use Toolkit\Stdlib\Helper\Assert;
+use Toolkit\Stdlib\Str;
 use Toolkit\Sys\Exec;
 use function trim;
 
@@ -277,9 +278,21 @@ abstract class AbstractCmdBuilder
      *
      * @return string
      */
-    public function getOutput(bool $trim = false): string
+    public function getOutput(bool $trim = true): string
     {
         return $trim ? trim($this->output) : $this->output;
+    }
+
+    /**
+     * get output as lines
+     *
+     * @return string[]
+     */
+    public function getOutputLines(): array
+    {
+        $out = trim($this->output);
+
+        return $out ? Str::splitTrimmed($out, "\n") : [];
     }
 
     /**
