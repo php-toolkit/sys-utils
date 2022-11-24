@@ -10,7 +10,6 @@
 namespace Toolkit\Sys\Cmd;
 
 use RuntimeException;
-use Toolkit\Stdlib\Helper\Assert;
 use Toolkit\Stdlib\Str;
 use Toolkit\Sys\Exec;
 use function trim;
@@ -241,10 +240,6 @@ abstract class AbstractCmdBuilder
      */
     public function setWorkDir(string $workDir): static
     {
-        if ($workDir) {
-            Assert::isDir($workDir, "workdir is not exists. path: $workDir");
-        }
-
         $this->workDir = $workDir;
         return $this;
     }
