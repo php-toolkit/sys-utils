@@ -9,7 +9,6 @@
 
 namespace Toolkit\Sys\Cmd;
 
-use Toolkit\Stdlib\Helper\Assert;
 use Toolkit\Stdlib\Str;
 use function sprintf;
 
@@ -163,10 +162,6 @@ class CmdBuilder extends AbstractCmdBuilder
     public function run(bool $printOutput = false): static
     {
         $this->printOutput = $printOutput;
-
-        if ($workDir = $this->workDir) {
-            Assert::isDir($workDir, "workdir is not exists. path: $workDir");
-        }
 
         $command = $this->buildCommandLine();
         $this->innerExecute($command, $this->workDir);

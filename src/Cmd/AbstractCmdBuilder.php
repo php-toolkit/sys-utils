@@ -10,6 +10,7 @@
 namespace Toolkit\Sys\Cmd;
 
 use RuntimeException;
+use Toolkit\Stdlib\Helper\Assert;
 use Toolkit\Stdlib\Str;
 use Toolkit\Sys\Exec;
 use function trim;
@@ -139,6 +140,10 @@ abstract class AbstractCmdBuilder
         if ($this->printCmd) {
             // Color::println("> {$command}", 'yellow');
             $this->printMessage("> $command", self::PRINT_CMD);
+        }
+
+        if ($workDir) {
+            Assert::isDir($workDir, "workdir is not exists. path: $workDir");
         }
 
         if ($this->dryRun) {
