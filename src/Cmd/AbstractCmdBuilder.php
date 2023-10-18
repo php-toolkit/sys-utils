@@ -109,6 +109,14 @@ abstract class AbstractCmdBuilder
     /**
      * run and print all output
      */
+    public function flushRun(): static
+    {
+        return $this->run(true);
+    }
+
+    /**
+     * run and print all output
+     */
     public function runAndPrint(): static
     {
         return $this->run(true);
