@@ -21,7 +21,7 @@ class Clipboard extends AbstractObj
     public const WRITER_ON_LINUX = 'xsel';
 
     public const READER_ON_MAC   = 'pbpaste';
-    public const READER_ON_WIN   = 'clip';
+    public const READER_ON_WIN   = 'powershell get-clipboard';
     public const READER_ON_LINUX = 'xclip';
 
     /**
