@@ -98,7 +98,7 @@ class PcntlFunc
      *
      * @return bool
      */
-    public static function asyncSignal(bool $on = null): bool
+    public static function asyncSignal(?bool $on = null): bool
     {
         return pcntl_async_signals($on);
     }
@@ -135,7 +135,7 @@ class PcntlFunc
      *
      * @return array{id: int, pid: int, startAt: int}
      */
-    public static function fork(callable $onStart, callable $onForkError = null, int $id = 0): array
+    public static function fork(callable $onStart, ?callable $onForkError = null, int $id = 0): array
     {
         $info = [];
         $pid  = pcntl_fork();
@@ -170,7 +170,7 @@ class PcntlFunc
      * @return array|false
      * @see ProcessUtil::fork()
      */
-    public static function create(callable $onStart, callable $onError = null, int $id = 0): bool|array
+    public static function create(callable $onStart, ?callable $onError = null, int $id = 0): bool|array
     {
         return self::fork($onStart, $onError, $id);
     }
@@ -183,7 +183,7 @@ class PcntlFunc
      * @return int Return new process PID
      * @throws RuntimeException
      */
-    public static function daemonRun(Closure $beforeQuit = null): int
+    public static function daemonRun(?Closure $beforeQuit = null): int
     {
         if (!self::hasPcntl()) {
             return 0;
@@ -223,7 +223,7 @@ class PcntlFunc
      * @return array
      * @see ProcessUtil::forks()
      */
-    public static function multi(int $number, callable $onStart, callable $onForkError = null): array
+    public static function multi(int $number, callable $onStart, ?callable $onForkError = null): array
     {
         return self::forks($number, $onStart, $onForkError);
     }
@@ -238,7 +238,7 @@ class PcntlFunc
      * @return array<int, array{id: int, pid: int, startTime: int}>
      * @throws RuntimeException
      */
-    public static function forks(int $number, callable $onStart, callable $onForkError = null): array
+    public static function forks(int $number, callable $onStart, ?callable $onForkError = null): array
     {
         Assert::intShouldGt0($number, 'process number', true);
 

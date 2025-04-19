@@ -1,8 +1,9 @@
 # System Utils
 
 [![License](https://img.shields.io/packagist/l/toolkit/sys-utils.svg?style=flat-square)](LICENSE)
-[![Php Version](https://img.shields.io/badge/php-%3E8.0.0-brightgreen.svg?maxAge=2592000)](https://packagist.org/packages/toolkit/sys-utils)
+[![Php Version Support](https://img.shields.io/packagist/php-v/toolkit/sys-utils)](https://packagist.org/packages/toolkit/sys-utils)
 [![Latest Stable Version](http://img.shields.io/packagist/v/toolkit/sys-utils.svg)](https://packagist.org/packages/toolkit/sys-utils)
+[![Unit-Tests](https://github.com/php-toolkit/sys-utils/actions/workflows/php.yml/badge.svg)](https://github.com/php-toolkit/sys-utils/actions)
 
 Some useful system utils for php
 
